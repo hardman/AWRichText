@@ -1,10 +1,8 @@
-//
-//  AWRTTextComponent.h
-//  AWMvc
-//
-//  Created by wanghongyu on 3/3/17.
-//  Copyright © 2017年 wanghongyu. All rights reserved.
-//
+/*
+ copyright 2018 wanghongyu.
+ The project page：https://github.com/hardman/AWRichText
+ My blog page: http://www.jianshu.com/u/1240d2400ca1
+ */
 
 #import "AWRTComponent.h"
 

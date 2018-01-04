@@ -1,10 +1,8 @@
-//
-//  AWRTWeekRefrence.m
-//  AWRichText
-//
-//  Created by kaso on 3/11/17.
-//  Copyright © 2017年 airwind. All rights reserved.
-//
+/*
+ copyright 2018 wanghongyu.
+ The project page：https://github.com/hardman/AWRichText
+ My blog page: http://www.jianshu.com/u/1240d2400ca1
+ */
 
 #import "AWRTWeekRefrence.h"
 

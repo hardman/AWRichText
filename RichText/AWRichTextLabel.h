@@ -1,20 +1,7 @@
-//
-//  AWRichTextLabel.h
-//  AWRichText
-//
-//  Created by kaso on 1/11/17.
-//  Copyright © 2017年 airwind. All rights reserved.
-//
-
 /*
- 自检：
- 1. component update mode ✅
- 2. coding ✅
- 3. copy ✅
- 4. 完整性，补全可操作属性 ✅
- 5. editableAttributes ✅
- 6. Label size 获取，autolayout ✅
- 7. 注释 & Log
+ copyright 2018 wanghongyu.
+ The project page：https://github.com/hardman/AWRichText
+ My blog page: http://www.jianshu.com/u/1240d2400ca1
  */
 
 #import <UIKit/UIKit.h>
