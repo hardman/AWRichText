@@ -288,8 +288,10 @@
 -(void) _triggerListenersUpdated{
     for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
         AWRTWeekRefrence *lisValue = _listeners[i];
-        if (lisValue.ref && [lisValue respondsToSelector:@selector(updatedForAWRichText:)]) {
-            [(id)lisValue updatedForAWRichText:self];
+        if (lisValue.ref) {
+            if ([lisValue respondsToSelector:@selector(updatedForAWRichText:)]) {
+                [(id)lisValue updatedForAWRichText:self];
+            }
         }else{
             [_listeners removeObject:lisValue];
         }
@@ -299,8 +301,10 @@
 -(void) _triggerListenersFmBuildState:(AWRichTextBuildState)fm toBuildState:(AWRichTextBuildState)to{
     for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
         AWRTWeekRefrence *lisValue = _listeners[i];
-        if (lisValue.ref && [lisValue respondsToSelector:@selector(awRichText:fmBuildState:toBuildState:)]) {
-            [(id)lisValue awRichText:self fmBuildState:fm toBuildState:to];
+        if (lisValue.ref) {
+            if ([lisValue respondsToSelector:@selector(awRichText:fmBuildState:toBuildState:)]) {
+                [(id)lisValue awRichText:self fmBuildState:fm toBuildState:to];
+            }
         }else{
             [_listeners removeObject:lisValue];
         }

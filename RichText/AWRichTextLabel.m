@@ -11,8 +11,6 @@
 #define AWRichTextEC @"AWRichTextEC"
 
 @interface AWRichTextLabel()<AWRichTextDelegate>
-@property (nonatomic, weak) UITapGestureRecognizer *tapGes;
-
 @property (nonatomic, weak) AWRTComponent *touchingComponent;
 @end
 
@@ -180,26 +178,6 @@
     [self sizeToFit];
     [self setNeedsUpdateConstraints];
     [self setNeedsDisplay];
-}
-
-/// 状态变更，此处做防连点。
-/// 如果是用userInterractionEnable会提前出发drawRect，在building状态drawRect，会令component的某些属性(range)变化，导致错误。
-/// 另外依据状态设计原则，building时不应该有绘制操作
-/// 所以尽量减少使用UILabel自带的属性和方法。
--(void)awRichText:(AWRichText *)richText fmBuildState:(AWRichTextBuildState)from toBuildState:(AWRichTextBuildState)to{
-    switch (to) {
-        case AWRichTextBuildStateWillBuilding:
-            //会触发drawrect 所以尽量不要主动改动此属性
-            //self.userInteractionEnabled = NO;
-            self.tapGes.enabled = NO;
-            break;
-        case AWRichTextBuildStateBuilt:
-            //self.userInteractionEnabled = YES;
-            self.tapGes.enabled = YES;
-            break;
-        default:
-            break;
-    }
 }
 
 #pragma mark - 绘制相关
