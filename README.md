@@ -1,4 +1,5 @@
-#AWRichText
+AWRichText
+--
 
 > 基于CoreText，面向对象，极简，易用，高效，支持精确点击，UIView混排，GIF动图，并不仅仅局限于图文混排的富文本排版神器。
 >
@@ -7,7 +8,8 @@
 > 接下来会在blog中更新一些具体实现细节。
 >
 
-##简述
+简述
+--
 很多app中都有聊天功能，图文混排也是常见的需求。
 
 iOS原生类：NSAttributedString 就是支持图文混排的。很多应用会用它来实现自己的功能。
@@ -32,7 +34,8 @@ AWRichText是可以让你在项目中大规模使用的，并不仅仅局限于�
 
 因此可出现在：**文档排版**，**聊天排版**，**列表展示**，**广告文案** 等各个位置。
 
-##功能演示
+功能演示
+--
 ![AWRichText演示](http://upload-images.jianshu.io/upload_images/1334370-0cbdba18bf38519e.gif?imageMogr2/auto-orient/strip)
 
 图中的Demo（直接下载github代码运行即可）包含4部分：
@@ -44,12 +47,16 @@ AWRichText是可以让你在项目中大规模使用的，并不仅仅局限于�
 
 Demo中所有元素都是使用AWRichText构造的。
 
-##使用方法
+使用方法
+--
 
-###1.直接引入文件
+1.直接引入文件
+--
 将代码中的 "RichText" 文件夹直接拖入你的工程。
 引入头文件 "AWRichText.h" 即可使用。
-###2.使用pod
+
+2.使用pod
+--
 在Podfile文件中加入：
 
 ```
@@ -66,7 +73,8 @@ end
 pod install
 ```
 
-##基本用法
+基本用法
+--
 
 ```Objective-C
 #include "AWRichText.h"
