@@ -167,6 +167,8 @@
     _components = [[NSMutableArray alloc] init];
     
     _paragraphStyle = [[NSMutableParagraphStyle alloc] init];
+    
+    _isGifAnimAutoRun = YES;
 }
 
 -(void)dealloc{
@@ -778,6 +780,15 @@
     };
 }
 
+-(AWRichTextPropertyChain) AWIsGifAnimAutoRun{
+    return ^(id isGifAnimAutoRun){
+        if ([isGifAnimAutoRun respondsToSelector:@selector(boolValue)]) {
+            self.isGifAnimAutoRun = [isGifAnimAutoRun boolValue];
+        }
+        return self;
+    };
+}
+
 #pragma mark - 使用core text绘制富文本
 ///使用core text绘制富文本
 -(void)drawRect:(CGRect)rect label:(UILabel *)label{
@@ -1008,6 +1019,12 @@
         CFRelease(truncedLine);
     }
     CFRelease(ctFrame);
+    
+    if (_isGifAnimAutoRun) {
+        [self letAnimStartOrStop:YES];
+    }else{
+        [self letAnimStartOrStop:NO];
+    }
 }
 
 #pragma mark sizeThat
@@ -1165,5 +1182,7 @@
             }
         }
     }];
+    
+    _isGifAnimAutoRun = isStart;
 }
 @end

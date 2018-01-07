@@ -92,6 +92,8 @@ typedef AWRichText *(^AWRichTextPropertyChain)(id);
 @property (nonatomic, strong) AWRTComponent *truncatingTokenComp;
 ///是否强制显示debugFrame
 @property (nonatomic, unsafe_unretained) BOOL alwaysShowDebugFrames;
+///是否自动播放gif动画
+@property (nonatomic, unsafe_unretained) BOOL isGifAnimAutoRun;
 
 #pragma mark - 属性的链式操作
 ///链式操作
@@ -101,6 +103,7 @@ typedef AWRichText *(^AWRichTextPropertyChain)(id);
 -(AWRichTextPropertyChain) AWParagraphStyle;
 -(AWRichTextPropertyChain) AWTruncatingTokenComp;
 -(AWRichTextPropertyChain) AWAlwaysShowDebugFrames;
+-(AWRichTextPropertyChain) AWIsGifAnimAutoRun;
 
 #pragma mark - 获取NSAttributedString，提前计算RichText的size时一般直接调用此方法。
 ///可直接调用此方法获取attributedString，直接触发build及drawRect
