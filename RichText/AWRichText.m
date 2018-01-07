@@ -18,6 +18,8 @@
 #define AWRTLineBreakMode @"AWRTLineBreakMode"
 #define AWRTParagraphStyle @"AWRTParagraphStyle"
 #define AWRTTruncatingTokenComp @"AWRTTruncatingTokenComp"
+#define AWRTAlwaysShowDebugFrame @"AWRTAlwaysShowDebugFrame"
+#define AWRTIsGifAnimAutoRun @"AWRTIsGifAnimAutoRun"
 #define AWRTComponents @"AWRTComponents"
 
 /// 缓存类
@@ -1132,6 +1134,8 @@
         self.lineBreakMode = [aDecoder decodeIntegerForKey:AWRTLineBreakMode];
         self.paragraphStyle = [aDecoder decodeObjectForKey:AWRTParagraphStyle];
         self.truncatingTokenComp = [aDecoder decodeObjectForKey:AWRTTruncatingTokenComp];
+        self.alwaysShowDebugFrames = [aDecoder decodeBoolForKey:AWRTAlwaysShowDebugFrame];
+        self.isGifAnimAutoRun = [aDecoder decodeBoolForKey:AWRTIsGifAnimAutoRun];
         self.components = [aDecoder decodeObjectForKey:AWRTComponents];
         
         _buildQueue = [[NSOperationQueue alloc] init];
@@ -1147,6 +1151,8 @@
     [aCoder encodeInteger:self.lineBreakMode forKey:AWRTLineBreakMode];
     [aCoder encodeObject:self.paragraphStyle forKey:AWRTParagraphStyle];
     [aCoder encodeObject:self.truncatingTokenComp forKey:AWRTTruncatingTokenComp];
+    [aCoder encodeBool:self.alwaysShowDebugFrames forKey:AWRTAlwaysShowDebugFrame];
+    [aCoder encodeBool:self.isGifAnimAutoRun forKey:AWRTIsGifAnimAutoRun];
     [aCoder encodeObject:self.components forKey:AWRTComponents];
 }
 
@@ -1157,7 +1163,10 @@
     .AWAlignment(@(self.alignment))
     .AWLineBreakMode(@(self.lineBreakMode))
     .AWParagraphStyle([self.paragraphStyle copyWithZone:zone])
-    .AWTruncatingTokenComp([self.truncatingTokenComp copyWithZone:zone]);
+    .AWTruncatingTokenComp([self.truncatingTokenComp copyWithZone:zone])
+    .AWAlwaysShowDebugFrames(@(self.alwaysShowDebugFrames))
+    .AWIsGifAnimAutoRun(@(self.isGifAnimAutoRun))
+    ;
     for (AWRTComponent *comp in self.components) {
         [newRichText addComponent:[comp copyWithZone:zone]];
     }
