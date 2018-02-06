@@ -59,11 +59,21 @@
     }
 }
 
+-(void)setFrame:(CGRect)frame{
+    [super setFrame:frame];
+    _rtFrame = frame;
+    
+    if (frame.size.width > 0 && frame.size.height > 0) {
+        [self redrawRichTextLabel];
+    }
+}
+
 -(void)setRtFrame:(CGRect)rtFrame{
     if (CGRectEqualToRect(_rtFrame, rtFrame)) {
         return;
     }
     _rtFrame = rtFrame;
+    super.frame = rtFrame;
     
     [self redrawRichTextLabel];
 }
@@ -173,9 +183,12 @@
     if ([self.richText checkIfInitingState]) {
         return;
     }
-    self.frame = self.rtFrame;
+    
+    if (self.frame.size.width == 0 || self.frame.size.height == 0) {
+        [self sizeToFit];
+    }
+    
     self.preferredMaxLayoutWidth = self.rtFrame.size.width;
-    [self sizeToFit];
     [self setNeedsUpdateConstraints];
     [self setNeedsDisplay];
 }
