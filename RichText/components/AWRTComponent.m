@@ -19,10 +19,6 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 @interface AWRTComponent()
 @property (nonatomic, strong) NSMutableDictionary *attributesForMode;
 @property (nonatomic, strong) NSAttributedString *attributedString;
-@property (nonatomic, strong) NSMutableDictionary *updatingAttributesDict;
-@property (nonatomic, copy) NSString *updatingMode;
-@property (nonatomic, unsafe_unretained) BOOL isUpdating;
-@property (nonatomic, unsafe_unretained) BOOL isUpdated;
 
 @property (nonatomic, unsafe_unretained) BOOL ignoreKvoObserve;
 @end
@@ -43,7 +39,6 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 
 -(instancetype)initWithCoder:(NSCoder *)aDecoder{
     if(self){
-        [self _beginUpdateWithMode:AWRTComponentDefaultMode saveExistsAttributes:NO];
         [self _addUpdateableObservers];
         
         self.font = [aDecoder decodeObjectForKey:AWRTCompFont];
@@ -99,20 +94,11 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
     if (self.ignoreKvoObserve) {
         return;
     }
-    if (self.checkIfInitingState || _isUpdating) {
-        if ([change[@"old"] isEqual:change[@"new"]]) {
-            return;
-        }
-        id newValue = change[@"new"];
-        if (![newValue isKindOfClass:[NSNull class]]) {
-            _updatingAttributesDict[keyPath] = change[@"new"];
-        }else{
-            _updatingAttributesDict[keyPath] = nil;
-        }
-        _isUpdated = YES;
-    }else{
-        [self setNeedsBuild];
+    if ([change[@"old"] isEqual:change[@"new"]]) {
+        return;
     }
+    
+    [self setNeedsBuild];
 }
 
 #pragma mark - update delegate
@@ -207,7 +193,6 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 -(void)onInit{
     self.attributesForMode = [[NSMutableDictionary alloc] init];
     self.currentMode = AWRTComponentDefaultMode;
-    [self _beginUpdateWithMode:AWRTComponentDefaultMode saveExistsAttributes:NO];
     [self _addUpdateableObservers];
 }
 
@@ -225,24 +210,31 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 }
 
 -(void) _build{
-    if (_isUpdating) {
-        BOOL isDefaultMode = [_updatingMode isEqualToString:AWRTComponentDefaultMode];
-        assert(isDefaultMode);
-        if (!isDefaultMode) {
-            NSLog(@"[E] build rt component when updating");
-            return;
-        }
-        [self _endUpdateWithSaveExistsAttributes:NO];
-    }
-    
-    if (_attributedString && !_isUpdated) {
-        return;
-    }
-    
     _attributedString = [self applyPaddingForAttributedString:[self build]];
 }
 
 #pragma mark - mode
+///清除当前设置的所有属性
+-(NSDictionary *) allAttributesDict{
+    NSMutableDictionary *dict = [[NSMutableDictionary alloc] init];
+    for (NSString *key in self.editableAttributes) {
+        dict[key] = [self valueForKey:key];
+    }
+    return dict;
+}
+
+-(void) emptyComponentAttributes{
+    self.ignoreKvoObserve = YES;
+    for (NSString *key in self.editableAttributes) {
+        if([[self valueForKey:key] isKindOfClass:[NSValue class]]){
+            [self setValue:@0 forKey:key];
+        } else {
+            [self setValue:nil forKey:key];
+        }
+    }
+    self.ignoreKvoObserve = NO;
+}
+
 -(void) applyAttributesWithMode:(NSString *)mode{
     NSDictionary *currModeDict = self.attributesForMode[mode];
     if (![currModeDict isKindOfClass:[NSDictionary class]] || currModeDict.count <= 0) {
@@ -270,141 +262,51 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
     }
     
     _currentMode = mode;
-    _isUpdated = YES;
+    
+    [self applyAttributesWithMode:_currentMode];
+    
+    [self setNeedsBuild];
 }
 
 -(NSArray *)allModes{
     return self.attributesForMode.allKeys;
 }
 
--(NSString *)updatingMode{
-    if (!_updatingMode) {
-        _updatingMode = (NSString *)AWRTComponentDefaultMode;
-    }
-    return _updatingMode;
+-(void) beginUpdateMode:(NSString *)updateMode block:(void (^)(void))block{
+    [self beginUpdateMode:updateMode storeAttributesWhenBegin:YES restoreAttributesWhenFinished:YES block:block];
 }
 
-///开始编辑模式
--(BOOL)_beginUpdateWithMode:(NSString *)updateMode saveExistsAttributes:(BOOL)saveExistsAttributes{
-    NSMutableDictionary *saveCurrentUpdatingAttrDict = nil;
-    if (saveExistsAttributes) {
-        saveCurrentUpdatingAttrDict = _updatingAttributesDict.copy;
+-(void) beginUpdateMode:(NSString *)updateMode storeAttributesWhenBegin:(BOOL) storeAttributesWhenBegin restoreAttributesWhenFinished:(BOOL) restoreAttributesWhenFinished block:(void(^)(void))block{
+    if (!storeAttributesWhenBegin) {
+        [self emptyComponentAttributes];
     }
     
-    if (_isUpdating && ![_updatingMode isEqualToString:updateMode]) {
-        [self _endUpdateWithSaveExistsAttributes:YES];
+    block();
+    
+    self.attributesForMode[updateMode] = self.allAttributesDict;
+    
+    if (restoreAttributesWhenFinished) {
+        [self applyAttributesWithMode:self.currentMode];
     }
-    
-    _updatingAttributesDict = [[NSMutableDictionary alloc] init];
-    
-    if (saveExistsAttributes && [saveCurrentUpdatingAttrDict isKindOfClass:[NSDictionary class]]) {
-        [_updatingAttributesDict addEntriesFromDictionary:saveCurrentUpdatingAttrDict];
-    }
-    
-    _isUpdating = YES;
-    
-    _updatingMode = updateMode;
-    
-    return YES;
 }
 
-///结束编辑模式
--(BOOL)_endUpdateWithSaveExistsAttributes:(BOOL)saveExistsAttributes{
-    if (!_isUpdating || !_isUpdated) {
-        goto Fail;
-    }
-    
-    assert(_updatingMode);
-    
-    if (!_updatingMode) {
-        goto Fail;
-    }
-    
-    if (_updatingAttributesDict.count > 0) {
-        if (saveExistsAttributes) {
-            NSMutableDictionary *savedUpdatingAttributes = [_attributesForMode[_updatingMode] mutableCopy];
-            if (!savedUpdatingAttributes) {
-                savedUpdatingAttributes = [[NSMutableDictionary alloc] init];
-            }
-            [savedUpdatingAttributes addEntriesFromDictionary:_updatingAttributesDict];
-            _attributesForMode[_updatingMode] = savedUpdatingAttributes;
+-(void)storeAllAttributesToMode:(NSString *)mode replace:(BOOL)replace{
+    NSMutableDictionary *currDict = [self.attributesForMode[mode] mutableCopy];
+    if ([currDict isKindOfClass:[NSDictionary class]] && currDict.count > 0) {
+        if (replace) {
+            self.attributesForMode[mode] = self.allAttributesDict;
         }else{
-            _attributesForMode[_updatingMode] = _updatingAttributesDict.mutableCopy;
+            NSDictionary *attributes = self.allAttributesDict;
+            for (NSString *key in attributes.allKeys) {
+                if (currDict[key] == nil) {
+                    currDict[key] = attributes[key];
+                }
+            }
+            self.attributesForMode[mode] = currDict;
         }
+    }else{
+        self.attributesForMode[mode] = self.allAttributesDict;
     }
-    
-    _isUpdating = NO;
-    _isUpdated = NO;
-    _updatingMode = nil;
-    _updatingAttributesDict = nil;
-    
-    ///在状态重置后调用此方法
-    [self applyAttributesWithMode:self.currentMode];
-    
-    _attributedString = nil;
-    
-    [self setNeedsBuild];
-    
-    return YES;
-Fail:
-    _isUpdating = NO;
-    _isUpdated = NO;
-    _updatingMode = nil;
-    _updatingAttributesDict = nil;
-    return NO;
-}
-
-#pragma mark - update 外部方法
--(BOOL) beginUpdate{
-    return [self beginUpdateWithSaveExistsAttributes:YES];
-}
-
--(BOOL) beginUpdateWithSaveExistsAttributes:(BOOL)saveExistsAttributes{
-    return [self _beginUpdateWithMode:self.currentMode saveExistsAttributes:saveExistsAttributes];
-}
-
--(BOOL)endUpdate{
-    return [self endUpdateWithSaveExistsAttributes:YES];
-}
-
--(BOOL)endUpdateWithSaveExistsAttributes:(BOOL)saveExistsAttributes{
-    return [self _endUpdateWithSaveExistsAttributes:saveExistsAttributes];
-}
-
--(BOOL) beginUpdateWithMode:(NSString *)updateMode updateBlock:(void(^)(void))updateBlock saveExistsAttributes:(BOOL)saveExistsAttributes{
-    if([self _beginUpdateWithMode:updateMode saveExistsAttributes:saveExistsAttributes]){
-        if (updateBlock) {
-            updateBlock();
-        }
-        [self _endUpdateWithSaveExistsAttributes:saveExistsAttributes];
-        return YES;
-    }
-    return NO;
-}
-
--(BOOL) beginUpdateWithMode:(NSString *)updateMode updateBlock:(void(^)(void))updateBlock{
-    return [self beginUpdateWithMode:updateMode updateBlock:updateBlock saveExistsAttributes:YES];
-}
-
--(BOOL) beginUpdateCurrentModeWithUpdateBlock:(void(^)(void))updateBlock saveExistsAttributes:(BOOL)saveExistsAttributes{
-    return [self beginUpdateWithMode:self.currentMode updateBlock:updateBlock saveExistsAttributes:saveExistsAttributes];
-}
-
--(BOOL) beginUpdateCurrentModeWithUpdateBlock:(void(^)(void))updateBlock{
-    return [self beginUpdateCurrentModeWithUpdateBlock:updateBlock saveExistsAttributes:YES];
-}
-
-///清除当前设置的所有属性
--(void) emptyComponentAttributes{
-    self.ignoreKvoObserve = YES;
-    for (NSString *key in self.editableAttributes) {
-        if([[self valueForKey:key] isKindOfClass:[NSValue class]]){
-            [self setValue:@0 forKey:key];
-        } else {
-            [self setValue:nil forKey:key];
-        }
-    }
-    self.ignoreKvoObserve = NO;
 }
 
 @end

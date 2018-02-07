@@ -52,6 +52,8 @@
     
     self.userInteractionEnabled = YES;
     
+    [self resetFrame];
+    
     if ([self.richText checkIfInitingState]) {
         [self.richText setNeedsBuild];
     }else{
@@ -59,9 +61,16 @@
     }
 }
 
+-(void) resetFrame{
+    [super setFrame:_rtFrame];
+}
+
 -(void)setFrame:(CGRect)frame{
     [super setFrame:frame];
-    _rtFrame = frame;
+    
+    if (CGRectEqualToRect(CGRectZero, _rtFrame)) {
+        _rtFrame = frame;
+    }
     
     if (frame.size.width > 0 && frame.size.height > 0) {
         [self redrawRichTextLabel];
@@ -189,7 +198,7 @@
     }
     
     self.preferredMaxLayoutWidth = self.rtFrame.size.width;
-    [self setNeedsUpdateConstraints];
+    [self invalidateIntrinsicContentSize];
     [self setNeedsDisplay];
 }
 

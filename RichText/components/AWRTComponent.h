@@ -64,24 +64,13 @@ typedef id (^AWRTComponentChain)(id);
 @property (nonatomic, unsafe_unretained) NSInteger paddingLeft;
 @property (nonatomic, unsafe_unretained) NSInteger paddingRight;
 
-#pragma mark - 更新模式
-/// 所有AWRTComponent的属性更新都应在beginUpdate～endUpdate之间。
-/// 下面带block的函数不需要endUpdate，内部已经调用了。
--(BOOL) beginUpdate;
--(BOOL) beginUpdateWithSaveExistsAttributes:(BOOL)saveExistsAttributes;
-
--(BOOL) endUpdate;
--(BOOL) endUpdateWithSaveExistsAttributes:(BOOL)saveExistsAttributes;
-
--(BOOL) beginUpdateWithMode:(NSString *)updateMode updateBlock:(void(^)(void))updateBlock;
--(BOOL) beginUpdateWithMode:(NSString *)updateMode updateBlock:(void(^)(void))updateBlock saveExistsAttributes:(BOOL)saveExistsAttributes;
-
--(BOOL) beginUpdateCurrentModeWithUpdateBlock:(void(^)(void))updateBlock;
--(BOOL) beginUpdateCurrentModeWithUpdateBlock:(void(^)(void))updateBlock saveExistsAttributes:(BOOL)saveExistsAttributes;
-
+#pragma mark - 更新及模式
 @property (nonatomic, copy) NSString *currentMode;
 
-@property (nonatomic, readonly, copy) NSString *updatingMode;
+-(void) beginUpdateMode:(NSString *)updateMode storeAttributesWhenBegin:(BOOL) storeAttributesWhenBegin restoreAttributesWhenFinished:(BOOL) restoreAttributesWhenFinished block:(void(^)(void))block;
+-(void) beginUpdateMode:(NSString *)updateMode block:(void (^)(void))block;
+
+-(void) storeAllAttributesToMode:(NSString *)mode replace:(BOOL) replace;
 
 -(NSArray *)allModes;
 

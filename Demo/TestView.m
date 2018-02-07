@@ -88,20 +88,20 @@ static BOOL sAWTestAlwaysShowDebugFrame = NO;
 #define TOUCHING_MODE (@"touchingLinkMode")
 #define DEFAULT_MODE ((NSString *)AWRTComponentDefaultMode)
     
-    [linkComp beginUpdateWithMode:TOUCHING_MODE updateBlock:^{
+    [linkComp storeAllAttributesToMode:DEFAULT_MODE replace:YES];
+    
+    [linkComp beginUpdateMode:TOUCHING_MODE block:^{
         linkComp.AWUnderlineStyle(@(NSUnderlineStyleSingle))
         .AWUnderlineColor(colorWithRgbCode(@"#55F"));
-    } saveExistsAttributes:YES];
+    }];
     
     linkComp.touchable = YES;
     linkComp.touchCallback = ^(AWRTComponent *comp, AWRTLabelTouchEvent touchEvent) {
-        [comp beginUpdateCurrentModeWithUpdateBlock:^{
-            if (awIsTouchingIn(touchEvent)) {
-                comp.currentMode = TOUCHING_MODE;
-            }else{
-                comp.currentMode = DEFAULT_MODE;
-            }
-        }];
+        if (awIsTouchingIn(touchEvent)) {
+            comp.currentMode = TOUCHING_MODE;
+        }else{
+            comp.currentMode = DEFAULT_MODE;
+        }
         
         if (touchEvent == AWRTLabelTouchEventEndedIn) {
             if (onClick) {

@@ -40,7 +40,7 @@
             if (descent < 0) {
                 descent = 0;
                 ascent = self.bounds.size.height;
-                NSLog(@"[warning] attachment(align top) bounds.size.height is too small, please select a bigger value");
+//                NSLog(@"[warning] attachment(align top) bounds.size.height is too small, please select a bigger value");
             }
             break;
         case AWRTAttachmentAlignBottom:
@@ -49,7 +49,7 @@
             if (ascent < 0) {
                 ascent = 0;
                 descent = self.bounds.size.height;
-                NSLog(@"[warning] attachment(align btm) bounds.size.height is too small, please select a bigger value");
+//                NSLog(@"[warning] attachment(align btm) bounds.size.height is too small, please select a bigger value");
             }
             break;
         case AWRTAttachmentAlignCenter:{
@@ -60,7 +60,7 @@
             if (descent > 0) {
                 descent = 0;
                 ascent = self.bounds.size.height;
-                NSLog(@"[warning] attachment bounds.size.height(align center) is too small, please select a bigger value");
+//                NSLog(@"[warning] attachment bounds.size.height(align center) is too small, please select a bigger value");
             }
         }
             break;
@@ -266,7 +266,7 @@ static void AWDeallocCallback(void *ref) {
                 return NO;
             }
             if (contentWid <= 0 || contentHei <= 0) {
-                NSLog(@"contentWid and contentHei cannot be 0 when boundsDepend is AWRTImageBoundsDependFont");
+//                NSLog(@"contentWid and contentHei cannot be 0 when boundsDepend is AWRTImageBoundsDependFont");
                 return NO;
             }
             CGFloat rate = contentWid / contentHei;
@@ -278,7 +278,7 @@ static void AWDeallocCallback(void *ref) {
             break;
         case AWRTAttchmentBoundsDependContent:{
             if (contentWid <= 0 || contentHei <= 0) {
-                NSLog(@"contentWid and contentHei cannot be 0 when boundsDepend is AWRTImageBoundsDependFont");
+//                NSLog(@"contentWid and contentHei cannot be 0 when boundsDepend is AWRTImageBoundsDependContent");
                 return NO;
             }
             self.bounds = CGRectMake(presetBounds.origin.x, presetBounds.origin.y - (presetBounds.size.height / 2) * (scale - 1), contentWid, contentHei);

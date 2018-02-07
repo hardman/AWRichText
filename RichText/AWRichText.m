@@ -30,25 +30,19 @@
 @end
 
 @implementation AWRTComponentPool
--(NSMutableArray *)textCompArray{
-    if (!_textCompArray) {
-        _textCompArray = [[NSMutableArray alloc] init];
+
+- (instancetype)init{
+    self = [super init];
+    if (self) {
+        [self onInit];
     }
-    return _textCompArray;
+    return self;
 }
 
--(NSMutableArray *)imageCompArray{
-    if (!_imageCompArray) {
-        _imageCompArray = [[NSMutableArray alloc] init];
-    }
-    return _imageCompArray;
-}
-
--(NSMutableArray *)viewCompArray{
-    if (!_viewCompArray) {
-        _viewCompArray = [[NSMutableArray alloc] init];
-    }
-    return _viewCompArray;
+-(void) onInit{
+    _textCompArray = [[NSMutableArray alloc] init];
+    _imageCompArray = [[NSMutableArray alloc] init];
+    _viewCompArray = [[NSMutableArray alloc] init];
 }
 
 -(AWRTComponent *)retainComponentWithType:(AWRTComponentType)type{
@@ -79,11 +73,13 @@
 
 -(AWRTTextComponent *)retainTextComponent{
     AWRTTextComponent *textComp = nil;
-    if (self.textCompArray.count > 0) {
-        textComp = self.textCompArray.lastObject;
-        [self.textCompArray removeLastObject];
-    }else{
-        textComp = [[AWRTTextComponent alloc] init];
+    @synchronized(self.textCompArray){
+        if (self.textCompArray.count > 0) {
+            textComp = self.textCompArray.lastObject;
+            [self.textCompArray removeLastObject];
+        }else{
+            textComp = [[AWRTTextComponent alloc] init];
+        }
     }
     return textComp;
 }
@@ -94,34 +90,42 @@
 
 -(AWRTImageComponent *)retainImageComponent{
     AWRTImageComponent *imageComp = nil;
-    if (self.imageCompArray.count > 0) {
-        imageComp = self.imageCompArray.lastObject;
-        [self.imageCompArray removeLastObject];
-    }else{
-        imageComp = [[AWRTImageComponent alloc] init];
+    @synchronized(self.imageCompArray){
+        if (self.imageCompArray.count > 0) {
+            imageComp = self.imageCompArray.lastObject;
+            [self.imageCompArray removeLastObject];
+        }else{
+            imageComp = [[AWRTImageComponent alloc] init];
+        }
     }
     return imageComp;
 }
 
 -(void) releaseImageComponent:(AWRTImageComponent *)imageComponent{
     [imageComponent emptyComponentAttributes];
-    [self.imageCompArray addObject:imageComponent];
+    @synchronized(self.imageCompArray){
+        [self.imageCompArray addObject:imageComponent];
+    }
 }
 
 -(AWRTViewComponent *)retainViewComponent{
     AWRTViewComponent *viewComp = nil;
-    if (self.viewCompArray.count > 0) {
-        viewComp = self.viewCompArray.lastObject;
-        [self.viewCompArray removeLastObject];
-    }else{
-        viewComp = [[AWRTViewComponent alloc] init];
+    @synchronized(self.viewCompArray){
+        if (self.viewCompArray.count > 0) {
+            viewComp = self.viewCompArray.lastObject;
+            [self.viewCompArray removeLastObject];
+        }else{
+            viewComp = [[AWRTViewComponent alloc] init];
+        }
     }
     return viewComp;
 }
 
 -(void) releaseViewComponent:(AWRTViewComponent *)viewComponent{
     [viewComponent emptyComponentAttributes];
-    [self.viewCompArray addObject:viewComponent];
+    @synchronized(self.viewCompArray){
+        [self.viewCompArray addObject:viewComponent];
+    }
 }
 @end
 
@@ -140,7 +144,7 @@
 /// 辅助变量
 @property (nonatomic, unsafe_unretained) AWRichTextBuildState updateState;
 @property (nonatomic, strong) NSOperationQueue *buildQueue;
-@property (nonatomic, unsafe_unretained) BOOL needBuild;
+@property (nonatomic, unsafe_unretained) BOOL needBuildAgain;
 
 /// pool
 @property (nonatomic, strong) AWRTComponentPool *pool;
@@ -263,6 +267,11 @@
             break;
         case AWRichTextBuildStateStable:{
             /// do nothing
+            if (self.needBuildAgain) {
+                self.updateState = AWRichTextBuildStateWillBuilding;
+                assert(self.updateState == AWRichTextBuildStateWillBuilding);
+                self.needBuildAgain = NO;
+            }
         }
             break;
         default:// AWRichTextBuildStateIniting:
@@ -285,67 +294,76 @@
     return NO;
 }
 
+-(void) _triggerListenersUpdatedMainThread{
+    if ([NSThread isMainThread]) {
+        [self _triggerListenersUpdated];
+    }else{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self _triggerListenersUpdated];
+        });
+    }
+}
+
 -(void) _triggerListenersUpdated{
-    for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
-        AWRTWeekRefrence *lisValue = _listeners[i];
-        if (lisValue.ref) {
-            if ([lisValue respondsToSelector:@selector(updatedForAWRichText:)]) {
-                [(id)lisValue updatedForAWRichText:self];
+    @synchronized(self){
+        for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
+            AWRTWeekRefrence *lisValue = _listeners[i];
+            if (lisValue.ref) {
+                if ([lisValue respondsToSelector:@selector(updatedForAWRichText:)]) {
+                    [(id)lisValue updatedForAWRichText:self];
+                }
+            }else{
+                [_listeners removeObject:lisValue];
             }
-        }else{
-            [_listeners removeObject:lisValue];
         }
     }
 }
 
 -(void) _triggerListenersFmBuildState:(AWRichTextBuildState)fm toBuildState:(AWRichTextBuildState)to{
-    for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
-        AWRTWeekRefrence *lisValue = _listeners[i];
-        if (lisValue.ref) {
-            if ([lisValue respondsToSelector:@selector(awRichText:fmBuildState:toBuildState:)]) {
-                [(id)lisValue awRichText:self fmBuildState:fm toBuildState:to];
+    @synchronized(self){
+        for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
+            AWRTWeekRefrence *lisValue = _listeners[i];
+            if (lisValue.ref) {
+                if ([lisValue respondsToSelector:@selector(awRichText:fmBuildState:toBuildState:)]) {
+                    [(id)lisValue awRichText:self fmBuildState:fm toBuildState:to];
+                }
+            }else{
+                [_listeners removeObject:lisValue];
             }
-        }else{
-            [_listeners removeObject:lisValue];
         }
     }
 }
 
 -(void) addListener:(id<AWRichTextDelegate>)listener{
-    if ([self checkIfBuildingState]) {
-        NSLog(@"addListener when building");
-        return;
-    }
-    
     if (![listener respondsToSelector:@selector(updatedForAWRichText:)]) {
         return;
     }
     
-    if ([self _isAddedListener:listener]) {
-        return;
+    @synchronized(self){
+        if ([self _isAddedListener:listener]) {
+            return;
+        }
+        
+        if (!_listeners) {
+            _listeners = [[NSMutableArray alloc] init];
+        }
+        
+        [_listeners addObject:[[AWRTWeekRefrence alloc] initWithRef:listener]];
     }
-    
-    if (!_listeners) {
-        _listeners = [[NSMutableArray alloc] init];
-    }
-    
-    [_listeners addObject:[[AWRTWeekRefrence alloc] initWithRef:listener]];
 }
 
 -(void) removeListener:(id<AWRichTextDelegate>)listener{
-    if ([self checkIfBuildingState]) {
-        NSLog(@"removeListener when building");
-        return;
-    }
     if (![listener respondsToSelector:@selector(updatedForAWRichText:)]) {
         return;
     }
     
-    for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
-        AWRTWeekRefrence *lisValue = _listeners[i];
-        if ([lisValue isEqual:listener]) {
-            [_listeners removeObject:lisValue];
-            break;
+    @synchronized(self){
+        for (NSInteger i = _listeners.count - 1; i >= 0; i--) {
+            AWRTWeekRefrence *lisValue = _listeners[i];
+            if ([lisValue isEqual:listener]) {
+                [_listeners removeObject:lisValue];
+                break;
+            }
         }
     }
 }
@@ -356,9 +374,15 @@
 -(void) setNeedsBuild{
     if ([NSThread isMainThread]) {
         self.updateState = AWRichTextBuildStateWillBuilding;
+        if (self.updateState != AWRichTextBuildStateWillBuilding) {
+            self.needBuildAgain = YES;
+        }
     }else{
         dispatch_async(dispatch_get_main_queue(), ^{
             self.updateState = AWRichTextBuildStateWillBuilding;
+            if (self.updateState != AWRichTextBuildStateWillBuilding) {
+                self.needBuildAgain = YES;
+            }
         });
     }
 }
@@ -427,46 +451,45 @@
     return YES;
 }
 
--(BOOL) addComponent:(AWRTComponent *)component{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return NO;
-    }
-    
-    if (![component isKindOfClass:[AWRTComponent class]]) {
-        return NO;
-    }
-    
+-(BOOL) _addComponent:(AWRTComponent *)component {
     if ([self.components containsObject:component]) {
         return NO;
     }
     
     [self.components addObject:component];
-    
     component.parent = self;
     
     return YES;
 }
 
--(BOOL) addComponents:(NSArray *)components{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
+-(BOOL) addComponent:(AWRTComponent *)component{
+    if (![component isKindOfClass:[AWRTComponent class]]) {
         return NO;
     }
+    
+    @synchronized(self){
+        if(![self _addComponent:component]){
+            return NO;
+        }
+    }
+    
+    return YES;
+}
+
+-(BOOL) addComponents:(NSArray *)components{
     if (![components isKindOfClass:[NSArray class]]) {
         return NO;
     }
-    for (AWRTComponent *comp in components) {
-        [self addComponent:comp];
+    
+    @synchronized(self){
+        for (AWRTComponent *comp in components) {
+            [self _addComponent:comp];
+        }
     }
     return YES;
 }
 
 -(BOOL) addComponentsFromRichText:(AWRichText *)richText{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return NO;
-    }
     if (![richText isKindOfClass:[AWRichText class]]) {
         return NO;
     }
@@ -477,14 +500,7 @@
     return YES;
 }
 
--(BOOL) removeComponent:(AWRTComponent *)component{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return NO;
-    }
-    if (![component isKindOfClass:[AWRTComponent class]]) {
-        return NO;
-    }
+-(BOOL) _removeComponent:(AWRTComponent *)component {
     if (![self.components containsObject:component]) {
         return NO;
     }
@@ -493,23 +509,38 @@
     return YES;
 }
 
--(BOOL) removeAllComponents{
-    if (self.components.count <= 0) {
-        return YES;
+-(BOOL) removeComponent:(AWRTComponent *)component{
+    if (![component isKindOfClass:[AWRTComponent class]]) {
+        return NO;
     }
     
-    [self enumationComponentsWithBlock:^(AWRTComponent *comp, BOOL *stop) {
-        [self removeComponent:comp];
-    } reverse:YES];
+    @synchronized(self){
+        [self _removeComponent:component];
+    }
+    return YES;
+}
+
+-(BOOL) removeAllComponents{
+    @synchronized(self){
+        if (self.components.count <= 0) {
+            return YES;
+        }
     
-    self.components = [[NSMutableArray alloc] init];
+        [self enumationComponentsWithBlock:^(AWRTComponent *comp, BOOL *stop) {
+            [self _removeComponent:comp];
+        } reverse:YES];
+        
+        self.components = [[NSMutableArray alloc] init];
+    }
     
     return YES;
 }
 
 -(AWRTComponent *)componentWithIndex:(NSInteger) index{
-    if (self.components.count > index) {
-        return [self.components objectAtIndex:index];
+    @synchronized(self){
+        if (self.components.count > index) {
+            return [self.components objectAtIndex:index];
+        }
     }
     return nil;
 }
@@ -533,19 +564,24 @@
 }
 
 -(void) enumationComponentsWithBlock:(void(^)(AWRTComponent *comp, BOOL *stop))block reverse:(BOOL)reverse{
-    if (self.components.count <= 0) {
+    NSArray *comps = nil;
+    @synchronized(self){
+        comps = self.components.copy;
+    }
+    
+    if (comps.count <= 0) {
         return;
     }
     if (block) {
         BOOL isStop = NO;
         NSInteger startIdx = 0;
-        NSInteger endIdx = self.components.count - 1;
+        NSInteger endIdx = comps.count - 1;
         if (reverse) {
-            startIdx = self.components.count - 1;
+            startIdx = comps.count - 1;
             endIdx = 0;
         }
         for (NSInteger i = startIdx; reverse ? i >= endIdx : i <= endIdx; reverse ? i-- : i++) {
-            block(self.components[i], &isStop);
+            block(comps[i], &isStop);
             if (isStop) {
                 break;
             }
@@ -565,31 +601,33 @@
 }
 
 -(BOOL) doBuild{
-    NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] init];
-    
-    NSArray *components = self.components;
-    
-    NSInteger locate = 0;
-    for (NSInteger i = 0; i < components.count; i++) {
-        AWRTComponent *component = components[i];
-        NSAttributedString *attrStr = component.attributedString;
-        if (attrStr) {
-            [attributedString appendAttributedString:attrStr];
-            component.range = NSMakeRange(locate, attrStr.length);
-            locate += attrStr.length;
+    @synchronized(self){
+        NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] init];
+        
+        NSArray *components = self.components;
+        
+        NSInteger locate = 0;
+        for (NSInteger i = 0; i < components.count; i++) {
+            AWRTComponent *component = components[i];
+            NSAttributedString *attrStr = component.attributedString;
+            if (attrStr) {
+                [attributedString appendAttributedString:attrStr];
+                component.range = NSMakeRange(locate, attrStr.length);
+                locate += attrStr.length;
+            }
         }
+        
+        if (self.paragraphStyle.lineBreakMode > NSLineBreakByCharWrapping) {
+            self.paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
+        }
+        
+        [attributedString addAttribute:NSParagraphStyleAttributeName value:self.paragraphStyle range:NSMakeRange(0, attributedString.length)];
+        
+        /// 文字方向，目前支持left->right方向
+        [attributedString addAttribute:NSWritingDirectionAttributeName value:@[@(NSWritingDirectionLeftToRight | NSTextWritingDirectionEmbedding)] range:NSMakeRange(0, attributedString.length)];
+        
+        _attributedString = attributedString;
     }
-    
-    if (self.paragraphStyle.lineBreakMode > NSLineBreakByCharWrapping) {
-        self.paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
-    }
-    
-    [attributedString addAttribute:NSParagraphStyleAttributeName value:self.paragraphStyle range:NSMakeRange(0, attributedString.length)];
-    
-    /// 文字方向，目前支持left->right方向
-    [attributedString addAttribute:NSWritingDirectionAttributeName value:@[@(NSWritingDirectionLeftToRight | NSTextWritingDirectionEmbedding)] range:NSMakeRange(0, attributedString.length)];
-    
-    _attributedString = attributedString;
     return YES;
 }
 
@@ -604,27 +642,29 @@
         assert([weakSelf checkIfBuildingState]);
         NSMutableAttributedString *attributedString = [[NSMutableAttributedString alloc] init];
         
-        NSArray *components = weakSelf.components;
-        
-        NSInteger locate = 0;
-        for (NSInteger i = 0; i < components.count; i++) {
-            AWRTComponent *component = components[i];
-            NSAttributedString *attrStr = component.attributedString;
-            if (attrStr) {
-                [attributedString appendAttributedString:attrStr];
-                component.range = NSMakeRange(locate, attrStr.length);
-                locate += attrStr.length;
+        @synchronized(self){
+            NSArray *components = weakSelf.components;
+            
+            NSInteger locate = 0;
+            for (NSInteger i = 0; i < components.count; i++) {
+                AWRTComponent *component = components[i];
+                NSAttributedString *attrStr = component.attributedString;
+                if (attrStr) {
+                    [attributedString appendAttributedString:attrStr];
+                    component.range = NSMakeRange(locate, attrStr.length);
+                    locate += attrStr.length;
+                }
             }
+            
+            //paragraph style
+            if (weakSelf.paragraphStyle.lineBreakMode > NSLineBreakByCharWrapping) {
+                weakSelf.paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
+            }
+            
+            [attributedString addAttribute:NSParagraphStyleAttributeName value:weakSelf.paragraphStyle range:NSMakeRange(0, attributedString.length)];
+            
+            weakSelf.attributedString = attributedString;
         }
-        
-        //paragraph style
-        if (weakSelf.paragraphStyle.lineBreakMode > NSLineBreakByCharWrapping) {
-            weakSelf.paragraphStyle.lineBreakMode = NSLineBreakByWordWrapping;
-        }
-        
-        [attributedString addAttribute:NSParagraphStyleAttributeName value:weakSelf.paragraphStyle range:NSMakeRange(0, attributedString.length)];
-        
-        weakSelf.attributedString = attributedString;
         
         if (weakSelf) {
             dispatch_async(dispatch_get_main_queue(), ^{
@@ -639,10 +679,19 @@
 /// 可直接调用此方法获取attributedString，
 /// 因为计算富文本尺寸需要_attributedString不为空，因此想要提前计算RichText的size时，可直接调用此方法。
 -(NSAttributedString *)attributedString{
-    if (!_attributedString) {
+    BOOL needBuild = NO;
+    
+    @synchronized(self){
+        needBuild = _attributedString == nil;
+    }
+    
+    if (needBuild) {
         [self _build];
     }
-    return _attributedString;
+    
+    @synchronized(self){
+        return _attributedString;
+    }
 }
 
 #pragma mark - 属性处理
@@ -656,7 +705,9 @@
     }
     _lineSpace = lineSpace;
     
-    [_paragraphStyle setLineSpacing:lineSpace];
+    @synchronized(self){
+        [_paragraphStyle setLineSpacing:lineSpace];
+    }
     
     [self setNeedsBuild];
 }
@@ -671,7 +722,9 @@
     }
     _alignment = alignment;
     
-    [_paragraphStyle setAlignment:alignment];
+    @synchronized(self){
+        [_paragraphStyle setAlignment:alignment];
+    }
     
     [self setNeedsBuild];
 }
@@ -700,7 +753,10 @@
     if (_paragraphStyle == paragraphStyle) {
         return;
     }
-    _paragraphStyle = [paragraphStyle mutableCopy];
+    
+    @synchronized(self){
+        _paragraphStyle = [paragraphStyle mutableCopy];
+    }
     
     [self setNeedsBuild];
 }
@@ -713,9 +769,12 @@
     if (_truncatingTokenComp == truncatingTokenComp) {
         return;
     }
-    _truncatingTokenComp = truncatingTokenComp;
     
-    [self _triggerListenersUpdated];
+    @synchronized(self){
+        _truncatingTokenComp = truncatingTokenComp;
+    }
+    
+    [self _triggerListenersUpdatedMainThread];
 }
 
 -(void)setAlwaysShowDebugFrames:(BOOL)alwaysShowDebugFrames{
@@ -726,9 +785,12 @@
     if (_alwaysShowDebugFrames == alwaysShowDebugFrames) {
         return;
     }
-    _alwaysShowDebugFrames = alwaysShowDebugFrames;
     
-    [self _triggerListenersUpdated];
+    @synchronized(self){
+        _alwaysShowDebugFrames = alwaysShowDebugFrames;
+    }
+    
+    [self _triggerListenersUpdatedMainThread];
 }
 
 #pragma mark - 属性的链式操作
@@ -803,7 +865,31 @@
         return;
     }
     
-    [self _drawRect:rect label:label attributedText:_attributedString components:self.components];
+    NSMutableAttributedString *attributedText = nil;
+    NSArray *components = nil;
+    AWRTComponent *truncatingTokenComp = nil;
+    NSLineBreakMode lineBreakMode = 0;
+    BOOL alwaysShowDebugFrame = NO;
+    BOOL isGifAnimAutoRun = NO;
+    
+    @synchronized(self){
+        attributedText = _attributedString;
+        components = _components;
+        truncatingTokenComp = _truncatingTokenComp;
+        lineBreakMode = _lineBreakMode;
+        alwaysShowDebugFrame = _alwaysShowDebugFrames;
+        isGifAnimAutoRun = _isGifAnimAutoRun;
+    }
+    
+    [self _drawRect:rect
+              label:label
+     attributedText:attributedText
+         components:components
+truncatingTokenComp:truncatingTokenComp
+      lineBreakMode:lineBreakMode
+alwaysShowDebugFrame:alwaysShowDebugFrame
+     isGifAnimAutoRun:isGifAnimAutoRun
+     ];
 }
 
 -(void) removeSubviewsWithLabel:(UILabel *)label{
@@ -813,7 +899,7 @@
     }
 }
 
--(void) _drawRect:(CGRect) rect label:(UILabel *)label attributedText:(NSMutableAttributedString *)attributedText components:(NSArray *)components{
+-(void) _drawRect:(CGRect) rect label:(UILabel *)label attributedText:(NSMutableAttributedString *)attributedText components:(NSArray *)components truncatingTokenComp:(AWRTComponent *)truncatingTokenComp lineBreakMode:(NSLineBreakMode)lineBreakMode alwaysShowDebugFrame:(BOOL) alwaysShowDebugFrame isGifAnimAutoRun:(BOOL) isGifAnimAutoRun{
     if (!attributedText) {
         return;
     }
@@ -853,29 +939,29 @@
     CFRange visibleRange = CTFrameGetVisibleStringRange(ctFrame);
     
     BOOL needTrunc = visibleRange.location + visibleRange.length < attributedText.length;
-    __block AWRTComponent *truncatingTokenComp = self.truncatingTokenComp;
-    if (needTrunc && !truncatingTokenComp) {
+    __block AWRTComponent *truncTokenComp = truncatingTokenComp;
+    if (needTrunc && !truncTokenComp) {
         [self enumationComponentsWithBlock:^(AWRTComponent *comp, BOOL *stop) {
             if ([comp isKindOfClass:[AWRTTextComponent class]]) {
-                truncatingTokenComp = [comp copy];
-                ((AWRTTextComponent *)truncatingTokenComp).AWText(@"...");
+                truncTokenComp = [comp copy];
+                ((AWRTTextComponent *)truncTokenComp).AWText(@"...");
                 *stop = YES;
             }
         } reverse:YES];
         
-        if (!truncatingTokenComp) {
-            truncatingTokenComp = [[AWRTTextComponent alloc] init].AWFont([UIFont systemFontOfSize:14]).AWColor([UIColor blackColor]).AWText(@"...");
+        if (!truncTokenComp) {
+            truncTokenComp = [[AWRTTextComponent alloc] init].AWFont([UIFont systemFontOfSize:14]).AWColor([UIColor blackColor]).AWText(@"...");
         }
     }
     CTLineRef truncedLine = NULL;
     CFRange truncedLineRange = CFRangeMake(0, 0);
-    if (needTrunc && truncatingTokenComp) {
-        NSAttributedString *tokenAttrStr = truncatingTokenComp.attributedString;
+    if (needTrunc && truncTokenComp) {
+        NSAttributedString *tokenAttrStr = truncTokenComp.attributedString;
         CTLineRef truncTokenLine = CTLineCreateWithAttributedString((CFAttributedStringRef)tokenAttrStr);
         CTLineTruncationType truncType = kCTLineTruncationEnd;
-        if (self.lineBreakMode == NSLineBreakByTruncatingHead) {
+        if (lineBreakMode == NSLineBreakByTruncatingHead) {
             truncType = kCTLineTruncationStart;
-        }else if(self.lineBreakMode == NSLineBreakByTruncatingMiddle){
+        }else if(lineBreakMode == NSLineBreakByTruncatingMiddle){
             truncType = kCTLineTruncationMiddle;
         }
         CTLineRef lastLine = CFArrayGetValueAtIndex(lineArray, lineCount - 1);
@@ -972,7 +1058,7 @@
             }
             
             ///8.5.6 绘制debugFrame
-            if (self.alwaysShowDebugFrames || comp.debugFrame) {
+            if (alwaysShowDebugFrame || comp.debugFrame) {
                 UIColor *redColor = [UIColor redColor];
                 CGFloat redR, redG, redB, redA;
                 [redColor getRed:&redR green:&redG blue:&redB alpha:&redA];
@@ -1026,7 +1112,7 @@
     }
     CFRelease(ctFrame);
     
-    if (_isGifAnimAutoRun) {
+    if (isGifAnimAutoRun) {
         [self letAnimStartOrStop:YES];
     }else{
         [self letAnimStartOrStop:NO];
@@ -1035,12 +1121,19 @@
 
 #pragma mark sizeThat
 -(CGSize)sizeThatFits:(CGSize)sizex label:(UILabel *)label{
-    CGSize rtSize = sizex;
-    NSAttributedString *attributedText = _attributedString;
-    
-    if (!attributedText) {
-        return rtSize;
+    NSAttributedString *attributedText = nil;
+    @synchronized(self){
+        attributedText = _attributedString;
     }
+    return [self _sizeThatFits:sizex label:label attributedText:attributedText];
+}
+
+-(CGSize)_sizeThatFits:(CGSize)sizex label:(UILabel *)label attributedText:(NSAttributedString *)attributedText{
+    if (!attributedText) {
+        return sizex;
+    }
+    
+    CGSize rtSize = sizex;
     
     if (rtSize.width > 0 && rtSize.height > 0) {
         return rtSize;
@@ -1196,6 +1289,8 @@
         }
     }];
     
-    _isGifAnimAutoRun = isStart;
+    @synchronized(self){
+        _isGifAnimAutoRun = isStart;
+    }
 }
 @end
