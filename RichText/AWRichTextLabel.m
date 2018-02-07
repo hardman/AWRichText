@@ -12,6 +12,8 @@
 
 @interface AWRichTextLabel()<AWRichTextDelegate>
 @property (nonatomic, weak) AWRTComponent *touchingComponent;
+
+@property (nonatomic, unsafe_unretained) BOOL isRedrawingRTLabel;
 @end
 
 @implementation AWRichTextLabel
@@ -51,8 +53,6 @@
     [richText addListener:(id<AWRichTextDelegate>)self];
     
     self.userInteractionEnabled = YES;
-    
-    [self resetFrame];
     
     if ([self.richText checkIfInitingState]) {
         [self.richText setNeedsBuild];
@@ -193,6 +193,14 @@
         return;
     }
     
+    if (self.isRedrawingRTLabel) {
+        return;
+    }
+    
+    self.isRedrawingRTLabel = YES;
+    
+    [self resetFrame];
+    
     if (self.frame.size.width == 0 || self.frame.size.height == 0) {
         [self sizeToFit];
     }
@@ -200,6 +208,8 @@
     self.preferredMaxLayoutWidth = self.rtFrame.size.width;
     [self invalidateIntrinsicContentSize];
     [self setNeedsDisplay];
+    
+    self.isRedrawingRTLabel = NO;
 }
 
 #pragma mark - 绘制相关
