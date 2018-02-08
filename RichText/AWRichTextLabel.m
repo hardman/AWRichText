@@ -61,28 +61,12 @@
     }
 }
 
--(void) resetFrame{
-    [super setFrame:_rtFrame];
-}
-
--(void)setFrame:(CGRect)frame{
-    [super setFrame:frame];
-    
-    if (CGRectEqualToRect(CGRectZero, _rtFrame)) {
-        _rtFrame = frame;
-    }
-    
-    if (frame.size.width > 0 && frame.size.height > 0) {
-        [self redrawRichTextLabel];
-    }
-}
-
 -(void)setRtFrame:(CGRect)rtFrame{
     if (CGRectEqualToRect(_rtFrame, rtFrame)) {
         return;
     }
+    
     _rtFrame = rtFrame;
-    super.frame = rtFrame;
     
     [self redrawRichTextLabel];
 }
@@ -97,6 +81,10 @@
 
 -(CGFloat)rtMaxWidth{
     return _rtFrame.size.width;
+}
+
+-(BOOL) usingAutoLayout{
+    return self.constraints.count > 0;
 }
 
 #pragma mark - touch 处理
@@ -199,14 +187,16 @@
     
     self.isRedrawingRTLabel = YES;
     
-    [self resetFrame];
-    
-    if (self.frame.size.width == 0 || self.frame.size.height == 0) {
-        [self sizeToFit];
+    if (self.usingAutoLayout) {
+        self.preferredMaxLayoutWidth = _rtFrame.size.width;
+        [self invalidateIntrinsicContentSize];
+    }else{
+        self.frame = _rtFrame;
+        if (self.frame.size.width == 0 || self.frame.size.height == 0) {
+            [self sizeToFit];
+        }
     }
     
-    self.preferredMaxLayoutWidth = self.rtFrame.size.width;
-    [self invalidateIntrinsicContentSize];
     [self setNeedsDisplay];
     
     self.isRedrawingRTLabel = NO;
