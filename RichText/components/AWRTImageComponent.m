@@ -72,6 +72,12 @@
     });
 }
 
+-(void)setAsyncArchiveBlock:(AWRTImagComponentAsyncArchiveBlock)asyncArchiveBlock{
+    _asyncArchiveBlock = asyncArchiveBlock;
+    if (_asyncArchiveBlock) {
+        _asyncArchiveBlock(self);
+    }
+}
 
 #pragma mark - chain
 -(AWRTImageComponentChain)AWImage{
@@ -97,6 +103,13 @@
         if ([path isKindOfClass:[NSString class]] && [path length] > 0) {
             [self _setImagePath:path];
         }
+        return self;
+    };
+}
+
+-(AWRTImageComponentChain)AWAsyncArchiveBlock{
+    return ^(id block){
+        self.asyncArchiveBlock = block;
         return self;
     };
 }
