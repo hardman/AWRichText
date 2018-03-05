@@ -8,7 +8,7 @@
 
 @class AWRTImageComponent;
 typedef AWRTImageComponent *(^AWRTImageComponentChain)(id);
-typedef void * (^AWRTImagComponentAsyncArchiveBlock)(AWRTImageComponent *imageComp);
+typedef void (^AWRTImagComponentAsyncArchiveBlock)(AWRTImageComponent *imageComp);
 
 @interface AWRTImageComponent : AWRTAttachmentComponent
 
