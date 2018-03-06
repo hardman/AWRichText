@@ -1120,20 +1120,20 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
 }
 
 #pragma mark sizeThat
--(CGSize)sizeThatFits:(CGSize)sizex label:(UILabel *)label{
+-(CGSize)sizeThatFits:(CGSize)size{
     NSAttributedString *attributedText = nil;
     @synchronized(self){
         attributedText = _attributedString;
     }
-    return [self _sizeThatFits:sizex label:label attributedText:attributedText];
+    return [self _sizeThatFits:size attributedText:attributedText];
 }
 
--(CGSize)_sizeThatFits:(CGSize)sizex label:(UILabel *)label attributedText:(NSAttributedString *)attributedText{
+-(CGSize)_sizeThatFits:(CGSize)size attributedText:(NSAttributedString *)attributedText{
     if (!attributedText) {
-        return sizex;
+        return size;
     }
     
-    CGSize rtSize = sizex;
+    CGSize rtSize = size;
     
     if (rtSize.width > 0 && rtSize.height > 0) {
         return rtSize;
@@ -1214,8 +1214,8 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
     return CGSizeMake(maxX, maxY);
 }
 
--(CGSize) intrinsicContentSizeWithPreferMaxWidth:(CGFloat) maxWidth label:(UILabel *)label{
-    return [self sizeThatFits:CGSizeMake(maxWidth, 0) label:label];
+-(CGSize) intrinsicContentSizeWithPreferMaxWidth:(CGFloat) maxWidth{
+    return [self sizeThatFits:CGSizeMake(maxWidth, 0)];
 }
 
 #pragma mark - 浮点数近似处理

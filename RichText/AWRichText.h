@@ -114,8 +114,8 @@ typedef AWRichText *(^AWRichTextPropertyChain)(id);
 -(void) drawRect:(CGRect) rect label:(UILabel *)label;
 
 #pragma mark - 尺寸计算
--(CGSize)sizeThatFits:(CGSize)size label:(UILabel *)label;
--(CGSize)intrinsicContentSizeWithPreferMaxWidth:(CGFloat)maxWidth label:(UILabel *)label;
+-(CGSize)sizeThatFits:(CGSize)size;
+-(CGSize)intrinsicContentSizeWithPreferMaxWidth:(CGFloat)maxWidth;
 
 #pragma mark - 动画
 ///如果components中有gif，如果某些情况下动画停止了（比如label移除后又添加），可以使用此函数。

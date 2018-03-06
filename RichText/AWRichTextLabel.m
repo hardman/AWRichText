@@ -210,12 +210,12 @@
 
 ///根据属性，自行计算label的size
 -(CGSize)sizeThatFits:(CGSize)size{
-    return [self.richText sizeThatFits:size label:self];
+    return [self.richText sizeThatFits:size];
 }
 
 ///autolayout中固有尺寸，用于自适应尺寸
 -(CGSize)intrinsicContentSize{
-    return [self.richText intrinsicContentSizeWithPreferMaxWidth:self.preferredMaxLayoutWidth label:self];
+    return [self.richText intrinsicContentSizeWithPreferMaxWidth:self.preferredMaxLayoutWidth];
 }
 
 #pragma mark - coding

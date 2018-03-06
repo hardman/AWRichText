@@ -178,7 +178,7 @@
     
     [[NSOperationQueue mainQueue] waitUntilAllOperationsAreFinished];
     
-    _cellHeight = [richText sizeThatFits:CGSizeMake(_maxWid, 0) label:nil].height;
+    _cellHeight = [richText sizeThatFits:CGSizeMake(_maxWid, 0)].height;
     _richtext = richText;
 }
 
