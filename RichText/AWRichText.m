@@ -369,22 +369,28 @@
 }
 
 #pragma mark - AWRTComponentUpdateDelegate
+-(void) runInMainThread:(void(^)())block{
+    if (!block) {
+        return;
+    }
+    if ([NSThread isMainThread]) {
+        block();
+    }else{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            block();
+        });
+    }
+}
+
 /// 此方法用于更新AWRichText
 /// 当属性改变时调用此方法，AWRichText就会重新计算尺寸，重新绘制。
 -(void) setNeedsBuild{
-    if ([NSThread isMainThread]) {
+    [self runInMainThread:^{
         self.updateState = AWRichTextBuildStateWillBuilding;
         if (self.updateState != AWRichTextBuildStateWillBuilding) {
             self.needBuildAgain = YES;
         }
-    }else{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.updateState = AWRichTextBuildStateWillBuilding;
-            if (self.updateState != AWRichTextBuildStateWillBuilding) {
-                self.needBuildAgain = YES;
-            }
-        });
-    }
+    }];
 }
 
 /// setNeedsBuild调用成功后，会调用此方法。
@@ -525,7 +531,7 @@
         if (self.components.count <= 0) {
             return YES;
         }
-    
+        
         [self enumationComponentsWithBlock:^(AWRTComponent *comp, BOOL *stop) {
             [self _removeComponent:comp];
         } reverse:YES];
@@ -596,7 +602,9 @@
 #pragma mark - build富文本
 -(BOOL) _build{
     [self doBuild];
-    self.updateState = AWRichTextBuildStateBuilt;
+    [self runInMainThread:^{
+        self.updateState = AWRichTextBuildStateBuilt;
+    }];
     return YES;
 }
 
@@ -888,7 +896,7 @@
 truncatingTokenComp:truncatingTokenComp
       lineBreakMode:lineBreakMode
 alwaysShowDebugFrame:alwaysShowDebugFrame
-     isGifAnimAutoRun:isGifAnimAutoRun
+   isGifAnimAutoRun:isGifAnimAutoRun
      ];
 }
 
@@ -1294,3 +1302,4 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
     }
 }
 @end
+
