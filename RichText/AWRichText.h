@@ -117,6 +117,9 @@ typedef AWRichText *(^AWRichTextPropertyChain)(id);
 -(CGSize)sizeThatFits:(CGSize)size;
 -(CGSize)intrinsicContentSizeWithPreferMaxWidth:(CGFloat)maxWidth;
 
+//实际绘制行数，会在计算尺寸和绘制中赋值，只有成功触发计算尺寸及绘制后，值才是正确的
+-(NSUInteger) drawingLineCount;
+
 #pragma mark - 动画
 ///如果components中有gif，如果某些情况下动画停止了（比如label移除后又添加），可以使用此函数。
 -(void) letAnimStartOrStop:(BOOL) isStart;

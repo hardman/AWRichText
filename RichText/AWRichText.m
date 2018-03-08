@@ -153,6 +153,8 @@
 @implementation AWRichText{
     /// 段落
     NSMutableParagraphStyle *_paragraphStyle;
+    /// 实际绘制行数
+    NSUInteger _drawingLineCount;
 }
 
 #pragma mark - 初始化
@@ -369,7 +371,7 @@
 }
 
 #pragma mark - AWRTComponentUpdateDelegate
--(void) runInMainThread:(void(^)())block{
+-(void) runInMainThread:(void(^)(void))block{
     if (!block) {
         return;
     }
@@ -935,6 +937,8 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
         return;
     }
     
+    _drawingLineCount = lineCount;
+    
     [self removeSubviewsWithLabel:label];
     
     ///4.准备绘制，保存CGContext状态，令画布变换影响范围缩小
@@ -1172,6 +1176,8 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
         return rtSize;
     }
     
+    _drawingLineCount = lineCount;
+    
     CGPoint linePoses[lineCount];
     CTFrameGetLineOrigins(ctFrame, CFRangeMake(0, 0), linePoses);
     
@@ -1224,6 +1230,10 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
 
 -(CGSize) intrinsicContentSizeWithPreferMaxWidth:(CGFloat) maxWidth{
     return [self sizeThatFits:CGSizeMake(maxWidth, 0)];
+}
+
+-(NSUInteger)drawingLineCount {
+    return _drawingLineCount;
 }
 
 #pragma mark - 浮点数近似处理
