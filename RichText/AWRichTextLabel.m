@@ -84,7 +84,10 @@
 }
 
 -(BOOL) usingAutoLayout{
-    return self.constraints.count > 0;
+    if (self.constraints.count > 0) {
+        return YES;
+    }
+    return _usingAutoLayout;
 }
 
 #pragma mark - touch 处理

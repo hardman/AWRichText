@@ -21,4 +21,6 @@
 
 @property (nonatomic, unsafe_unretained) CGFloat rtMaxWidth;
 
+@property (nonatomic, unsafe_unretained) BOOL usingAutoLayout;
+
 @end
