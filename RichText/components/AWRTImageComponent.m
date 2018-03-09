@@ -136,6 +136,10 @@
     return (AWRTImageComponentChain) [super AWDebugFrame];
 }
 
+-(AWRTImageComponentChain)AWAsyncArchiveBlock{
+    return (AWRTImageComponentChain) [super AWAsyncArchiveBlock];
+}
+
 #pragma mark - coding
 -(instancetype)initWithCoder:(NSCoder *)aDecoder{
     if (self = [super initWithCoder:aDecoder]) {
@@ -158,4 +162,3 @@
 }
 
 @end
-

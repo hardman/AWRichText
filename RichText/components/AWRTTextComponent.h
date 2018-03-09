@@ -90,4 +90,6 @@ typedef AWRTTextComponent *(^AWTextComponentChain)(id);
 -(AWTextComponentChain) AWPaddingRight;
 -(AWTextComponentChain) AWDebugFrame;
 
+-(AWTextComponentChain) AWAsyncArchiveBlock;
+
 @end

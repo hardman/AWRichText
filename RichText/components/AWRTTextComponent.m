@@ -574,4 +574,8 @@
     };
 }
 
+-(AWTextComponentChain) AWAsyncArchiveBlock{
+    return (AWTextComponentChain) [super AWAsyncArchiveBlock];
+}
+
 @end

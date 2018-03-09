@@ -30,5 +30,6 @@ typedef AWRTImageComponent *(^AWRTImageComponentChain)(id);
 -(AWRTImageComponentChain)AWPaddingRight;
 -(AWRTImageComponentChain)AWDebugFrame;
 
-@end
+-(AWRTImageComponentChain) AWAsyncArchiveBlock;
 
+@end

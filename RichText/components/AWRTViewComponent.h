@@ -28,4 +28,6 @@ typedef AWRTViewComponent *(^AWRTViewComponentChain)(id);
 -(AWRTViewComponentChain)AWPaddingLeft;
 -(AWRTViewComponentChain)AWPaddingRight;
 -(AWRTViewComponentChain)AWDebugFrame;
+
+-(AWRTViewComponentChain)AWAsyncArchiveBlock;
 @end

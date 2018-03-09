@@ -105,3 +105,4 @@ typedef void (^AWRTComponentAsyncArchiveBlock)(AWRTComponent *comp);
 -(AWRTComponentChain) AWDebugFrame;
 -(AWRTComponentChain) AWFont;
 @end
+

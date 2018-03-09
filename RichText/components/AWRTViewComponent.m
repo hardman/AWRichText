@@ -81,6 +81,11 @@
     return (AWRTViewComponentChain) [super AWDebugFrame];
 }
 
+-(AWRTViewComponentChain)AWAsyncArchiveBlock{
+    return (AWRTViewComponentChain) [super AWAsyncArchiveBlock];
+}
+
+
 #pragma mark - coding
 -(instancetype)initWithCoder:(NSCoder *)aDecoder{
     if (self = [super initWithCoder:aDecoder]) {
