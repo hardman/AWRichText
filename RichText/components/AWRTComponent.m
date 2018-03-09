@@ -24,6 +24,7 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 @end
 
 @implementation AWRTComponent
+
 #pragma mark - init
 - (instancetype)init {
     self = [super init];
@@ -119,6 +120,21 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 }
 
 #pragma mark - attributes
+
+-(void)setAsyncArchiveBlock:(AWRTComponentAsyncArchiveBlock)asyncArchiveBlock{
+    _asyncArchiveBlock = asyncArchiveBlock;
+    if (_asyncArchiveBlock) {
+        _asyncArchiveBlock(self);
+    }
+}
+
+-(AWRTComponentChain)AWAsyncArchiveBlock{
+    return ^(id block){
+        self.asyncArchiveBlock = block;
+        return self;
+    };
+}
+
 -(AWRTComponentChain) AWPaddingLeft{
     return ^(id paddingLeft){
         self.paddingLeft = [paddingLeft integerValue];

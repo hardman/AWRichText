@@ -8,18 +8,13 @@
 
 @class AWRTImageComponent;
 typedef AWRTImageComponent *(^AWRTImageComponentChain)(id);
-typedef void (^AWRTImagComponentAsyncArchiveBlock)(AWRTImageComponent *imageComp);
 
 @interface AWRTImageComponent : AWRTAttachmentComponent
 
 //对图片进行等比缩放
 @property (nonatomic, unsafe_unretained) CGFloat imageScale;
 
-//异步构造
-@property (nonatomic, strong) AWRTImagComponentAsyncArchiveBlock asyncArchiveBlock;
-
 #pragma mark chain funcs
--(AWRTImageComponentChain)AWAsyncArchiveBlock;
 -(AWRTImageComponentChain)AWImagePath;
 -(AWRTImageComponentChain)AWImage;
 -(AWRTImageComponentChain)AWImageScale;
@@ -36,3 +31,4 @@ typedef void (^AWRTImagComponentAsyncArchiveBlock)(AWRTImageComponent *imageComp
 -(AWRTImageComponentChain)AWDebugFrame;
 
 @end
+

@@ -44,6 +44,9 @@ extern const NSString *AWRTComponentDefaultMode;
 
 typedef id (^AWRTComponentChain)(id);
 
+@class AWRTComponent;
+typedef void (^AWRTComponentAsyncArchiveBlock)(AWRTComponent *comp);
+
 @interface AWRTComponent : NSObject<NSCopying, NSCoding, AWRTComponentUpdateDelegate>
 
 /// 一般是对应的AWRichText
@@ -87,12 +90,16 @@ typedef id (^AWRTComponentChain)(id);
 //生成attributedString，调用会触发build
 @property (nonatomic, readonly, strong) NSAttributedString *attributedString;
 
+//异步构造
+@property (nonatomic, strong) AWRTComponentAsyncArchiveBlock asyncArchiveBlock;
+
 #pragma mark - 子类需重载的函数
 -(void) onInit;
 -(NSSet *) editableAttributes;
 -(NSAttributedString *) build;
 
 #pragma mark - 链式操作
+-(AWRTComponentChain) AWAsyncArchiveBlock;
 -(AWRTComponentChain) AWPaddingRight;
 -(AWRTComponentChain) AWPaddingLeft;
 -(AWRTComponentChain) AWDebugFrame;
