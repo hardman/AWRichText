@@ -89,6 +89,8 @@ typedef void (^AWRTComponentAsyncArchiveBlock)(AWRTComponent *comp);
 #pragma mark - 获取attributedString
 //生成attributedString，调用会触发build
 @property (nonatomic, readonly, strong) NSAttributedString *attributedString;
+//清空生成的attributedString，一般用于重建组件
+-(void) clearAttributedString;
 
 //异步构造
 @property (nonatomic, strong) AWRTComponentAsyncArchiveBlock asyncArchiveBlock;

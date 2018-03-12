@@ -109,6 +109,8 @@ typedef AWRichText *(^AWRichTextPropertyChain)(id);
 ///可直接调用此方法获取attributedString，直接触发build及drawRect
 ///因为计算富文本尺寸需要_attributedString不为空，因此想要提前计算RichText的size时，可直接调用此方法。
 -(NSAttributedString *)attributedString;
+//清空生成的attributedString，一般用于重建组件
+-(void) clearAttributedString;
 
 #pragma mark - 绘制
 -(void) drawRect:(CGRect) rect label:(UILabel *)label;

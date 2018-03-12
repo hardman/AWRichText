@@ -704,12 +704,14 @@
     }
 }
 
+-(void) clearAttributedString{
+    @synchronized(self){
+        _attributedString = nil;
+    }
+}
+
 #pragma mark - 属性处理
 -(void)setLineSpace:(CGFloat)lineSpace{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return;
-    }
     if (_lineSpace == lineSpace) {
         return;
     }
@@ -723,10 +725,6 @@
 }
 
 -(void)setAlignment:(NSTextAlignment)alignment{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return;
-    }
     if (_alignment == alignment) {
         return;
     }
@@ -740,10 +738,6 @@
 }
 
 -(void)setLineBreakMode:(NSLineBreakMode)lineBreakMode{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return;
-    }
     if (_lineBreakMode == lineBreakMode) {
         return;
     }
@@ -756,10 +750,6 @@
 }
 
 -(void)setParagraphStyle:(NSParagraphStyle *)paragraphStyle{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return;
-    }
     if (_paragraphStyle == paragraphStyle) {
         return;
     }
@@ -772,10 +762,6 @@
 }
 
 -(void)setTruncatingTokenComp:(AWRTComponent *)truncatingTokenComp{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return;
-    }
     if (_truncatingTokenComp == truncatingTokenComp) {
         return;
     }
@@ -788,10 +774,6 @@
 }
 
 -(void)setAlwaysShowDebugFrames:(BOOL)alwaysShowDebugFrames{
-    assert(![self checkIfBuildingState]);
-    if ([self checkIfBuildingState]) {
-        return;
-    }
     if (_alwaysShowDebugFrames == alwaysShowDebugFrames) {
         return;
     }
