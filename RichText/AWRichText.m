@@ -467,6 +467,8 @@
     [self.components addObject:component];
     component.parent = self;
     
+    [self setNeedsBuild];
+    
     return YES;
 }
 
@@ -514,6 +516,9 @@
     }
     
     [self.components removeObject:component];
+    
+    [self setNeedsBuild];
+    
     return YES;
 }
 
@@ -708,6 +713,8 @@
     @synchronized(self){
         _attributedString = nil;
     }
+    
+    [self setNeedsBuild];
 }
 
 #pragma mark - 属性处理

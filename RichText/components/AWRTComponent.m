@@ -219,6 +219,7 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 
 -(void) clearAttributedString{
     _attributedString = nil;
+    [self setNeedsBuild];
 }
 
 -(NSAttributedString *)build{
