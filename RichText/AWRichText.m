@@ -386,13 +386,18 @@
 
 /// 此方法用于更新AWRichText
 /// 当属性改变时调用此方法，AWRichText就会重新计算尺寸，重新绘制。
--(void) setNeedsBuild{
+-(void) _setNeedsBuild{
     [self runInMainThread:^{
         self.updateState = AWRichTextBuildStateWillBuilding;
         if (self.updateState != AWRichTextBuildStateWillBuilding) {
             self.needBuildAgain = YES;
         }
     }];
+}
+
+-(void) setNeedsBuild{
+    [self clearAttributedString];
+    [self _setNeedsBuild];
 }
 
 /// setNeedsBuild调用成功后，会调用此方法。
@@ -467,7 +472,8 @@
     [self.components addObject:component];
     component.parent = self;
     
-    [self setNeedsBuild];
+    [self _clearAttributedString];
+    [self _setNeedsBuild];
     
     return YES;
 }
@@ -517,7 +523,8 @@
     
     [self.components removeObject:component];
     
-    [self setNeedsBuild];
+    [self _clearAttributedString];
+    [self _setNeedsBuild];
     
     return YES;
 }
@@ -711,10 +718,12 @@
 
 -(void) clearAttributedString{
     @synchronized(self){
-        _attributedString = nil;
+        [self _clearAttributedString];
     }
-    
-    [self setNeedsBuild];
+}
+
+-(void) _clearAttributedString{
+    _attributedString = nil;
 }
 
 #pragma mark - 属性处理
