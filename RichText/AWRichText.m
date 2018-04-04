@@ -1179,7 +1179,7 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
     CGPoint linePoses[lineCount];
     CTFrameGetLineOrigins(ctFrame, CFRangeMake(0, 0), linePoses);
     
-    CGFloat maxX = AWRichTextMinValue;
+    CGFloat maxX = lineCount > 1 ? size.width : AWRichTextMinValue;
     CGFloat maxY = AWRichTextMinValue;
     
     for (NSInteger i = 0; i < lineCount; i++) {
@@ -1189,9 +1189,11 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
         
         CGPoint linePos = linePoses[i];
         
-        CGFloat lineMaxX = [self ceilValue: linePos.x + lineWid];
-        if (lineMaxX > maxX) {
-            maxX = lineMaxX;
+        if (lineCount <= 1) {
+            CGFloat lineMaxX = [self ceilValue: linePos.x + lineWid];
+            if (lineMaxX > maxX) {
+                maxX = lineMaxX;
+            }
         }
         
         CGFloat lineMaxY = [self ceilValue: rtSize.height - linePos.y + oneLineDescent + oneLineLeading];
@@ -1209,9 +1211,11 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
             
             CGRect runAttachmentRect = CGRectMake(linePos.x + ctRunXOffset, rtSize.height - linePos.y - ctRunAscent, ctRunWidth, ctRunHeight);
             
-            CGFloat runAttachRctMaxX = [self ceilValue: runAttachmentRect.origin.x + runAttachmentRect.size.width];
-            if (runAttachRctMaxX > maxX) {
-                maxX = runAttachRctMaxX;
+            if (lineCount <= 1) {
+                CGFloat runAttachRctMaxX = [self ceilValue: runAttachmentRect.origin.x + runAttachmentRect.size.width];
+                if (runAttachRctMaxX > maxX) {
+                    maxX = runAttachRctMaxX;
+                }
             }
             
             CGFloat runAttachRctMaxY = [self ceilValue: rtSize.height - linePos.y + ctRunDescent];
