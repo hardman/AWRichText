@@ -1171,7 +1171,7 @@ alwaysShowDebugFrame:alwaysShowDebugFrame
     
     if (lineCount == 0) {
         CFRelease(ctFrame);
-        return rtSize;
+        return size;
     }
     
     _drawingLineCount = lineCount;
