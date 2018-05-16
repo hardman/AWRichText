@@ -208,7 +208,7 @@
 #pragma mark - 绘制相关
 ///覆盖系统函数，使用coretext绘制文本
 -(void)drawRect:(CGRect)rect{
-    [self.richText drawRect:rect label:self];
+    [self.richText drawRect:self.bounds label:self];
 }
 
 ///根据属性，自行计算label的size
