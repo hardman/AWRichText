@@ -27,47 +27,30 @@
 @implementation AWRTAttachment
 
 -(void) calcAescentDesccent{
+    CGFloat fontAscent = fabs(self.fontAscent);
+    CGFloat fontDescent = fabs(self.fontDescent);
     CGFloat ascent = self.bounds.size.height;
     CGFloat descent = 0;
     switch (self.alignment) {
         case AWRTAttachmentAlignTop:
-            ascent = self.fontAscent;
-            descent = self.bounds.size.height - self.fontAscent;
-            ///因为descent和ascent都是无符号的，所以文字排版baseline上下必须要都要有内容。
-            ///descent小于0，说明attachment.bounds.size.height的值太小了，无法满足绘制。
-            ///此种情况下，尽可能向上，将descent置为0，ascent为bounds.size.height;
-            ///下同
-            if (descent < 0) {
-                descent = 0;
-                ascent = self.bounds.size.height;
-//                NSLog(@"[warning] attachment(align top) bounds.size.height is too small, please select a bigger value");
-            }
+            ascent = fontAscent;
+            descent = fontAscent - self.bounds.size.height;
             break;
         case AWRTAttachmentAlignBottom:
-            ascent = self.bounds.size.height + self.fontDescent;
-            descent = self.fontDescent;
-            if (ascent < 0) {
-                ascent = 0;
-                descent = self.bounds.size.height;
-//                NSLog(@"[warning] attachment(align btm) bounds.size.height is too small, please select a bigger value");
-            }
+            ascent = self.bounds.size.height - fontDescent;
+            descent = -fontDescent;
             break;
         case AWRTAttachmentAlignCenter:{
-            CGFloat tmp = ((self.fontAscent - self.fontDescent) / 2 + self.fontDescent);
+            CGFloat tmp = ((fontAscent + fontDescent) / 2 - fontDescent);
             CGFloat halfhei = self.bounds.size.height / 2;
             ascent =  tmp + halfhei;
             descent = tmp - halfhei;
-            if (descent > 0) {
-                descent = 0;
-                ascent = self.bounds.size.height;
-//                NSLog(@"[warning] attachment bounds.size.height(align center) is too small, please select a bigger value");
-            }
         }
             break;
     }
     
     self.attachmentAscent = ascent;
-    self.attachmentDescent = fabs(descent);
+    self.attachmentDescent = -descent;
 }
 
 -(instancetype)initWithCoder:(NSCoder *)aDecoder{
@@ -232,8 +215,15 @@ static void AWDeallocCallback(void *ref) {
     if (!_attachment) {
         _attachment = [[AWRTAttachment alloc] init];
     }
-    _attachment.fontAscent = self.font.ascender;
-    _attachment.fontDescent = self.font.descender;
+    CGFloat fontAscent = self.font.ascender;
+    CGFloat fontDescent = fabs(self.font.descender);
+    
+    //font的ascender，descender与coreText计算的存在误差。
+    CGFloat off = (self.font.lineHeight - self.font.pointSize) / 2;
+    
+    _attachment.fontAscent = fontAscent - off;
+    _attachment.fontDescent = fontDescent - off;
+    
     _attachment.debugFrame = self.debugFrame;
     
     _attachment.content = self.content;
