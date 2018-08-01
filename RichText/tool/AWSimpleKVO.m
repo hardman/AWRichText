@@ -197,9 +197,9 @@ static void _localSetterObj(id obj, SEL sel, id v) {
 #define LOCAL_SETTER_NUMBER(type, TypeSet, typeGet) \
 static void _localSetter##TypeSet(id obj, SEL sel, type v){ \
     AWSimpleKVOItem *item = _localSetterReady(obj, sel); \
-    if([item.oldValue typeGet##Value] == v) {\
-        return;\
-    }\
+    if([item.oldValue typeGet##Value] == v) { \
+        return; \
+    } \
     ((void (*)(id, SEL, type))item._superMethod)(obj, sel, v); \
     _localSetterNotify(item, obj, item.keyPath, [NSNumber numberWith##TypeSet:v]); \
 }
@@ -221,13 +221,10 @@ LOCAL_SETTER_NUMBER(bool, Bool, bool)
 #define LOCAL_SETTER_STRUCTURE(type, equalMethod) \
 static void _localSetter##type(id obj, SEL sel, type v) { \
     AWSimpleKVOItem *item = _localSetterReady(obj, sel); \
-    \
     if(equalMethod([item.oldValue type##Value], v)){ \
         return; \
     } \
-    \
     ((void (*)(id, SEL, type))item._superMethod)(obj, sel, v); \
-    \
     _localSetterNotify(item, obj, item.keyPath, [NSValue valueWith##type: v]); \
 }
 
@@ -254,7 +251,11 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
         @synchronized(self) {
             self.obj = obj;
             self.observerDict = [[NSMutableDictionary alloc] init];
-            self.simpleKVOClassName = [AWSIMPLEKVOPREFIX stringByAppendingString:NSStringFromClass(obj.class)];
+            if (obj.awIsObserving) {
+                self.simpleKVOClassName = NSStringFromClass(obj.class);
+            }else{
+                self.simpleKVOClassName = [AWSIMPLEKVOPREFIX stringByAppendingString:NSStringFromClass(obj.class)];
+            }
         }
     }
     return self;
@@ -464,11 +465,16 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
 -(Class) addNewClassObserverClass:(Class) c keyPath:(NSString *)keyPath item:(AWSimpleKVOItem *)item {
     Class classNew = self.simpleKVOClass;
     if (!classNew) {
-        NSString *classNewName = self.simpleKVOClassName;
-        classNew = objc_allocateClassPair(c, classNewName.UTF8String, 0);
-        objc_registerClassPair(classNew);
-        self.simpleKVOClass = classNew;
-        self.simpleKVOOriClass = c;
+        @synchronized(self.class) {
+            classNew = self.simpleKVOClass;
+            if(!classNew) {
+                NSString *classNewName = self.simpleKVOClassName;
+                classNew = objc_allocateClassPair(c, classNewName.UTF8String, 0);
+                objc_registerClassPair(classNew);
+                self.simpleKVOClass = classNew;
+                self.simpleKVOOriClass = c;
+            }
+        }
     }
     
     class_addMethod(classNew, item._setSel, item._localMethod, item._localMethodTypeCoding.UTF8String);
