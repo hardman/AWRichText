@@ -251,18 +251,20 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
     }
     
     if(self = [super init]) {
-        self.obj = obj;
-        self.observerDict = [[NSMutableDictionary alloc] init];
+        @synchronized(self) {
+            self.obj = obj;
+            self.observerDict = [[NSMutableDictionary alloc] init];
+            self.simpleKVOClassName = [AWSIMPLEKVOPREFIX stringByAppendingString:NSStringFromClass(obj.class)];
+        }
     }
     return self;
 }
 
 -(void)awSetValue:(id)value forKey:(NSString*)key{
     if ([self.obj awIsObserving]) {
-        NSString *selStr = _getSelWithKeyPath(key);
-        SEL selector = NSSelectorFromString(selStr);
-        IMP method = class_getMethodImplementation(self.simpleKVOOriClass, selector);
-        ((void (*)(id, SEL, id))method)(self.obj, selector, value);
+        object_setClass(self.obj, self.simpleKVOOriClass);
+        [self.obj setValue:value forKey:key];
+        object_setClass(self.obj, self.simpleKVOClass);
     }else{
         [self.obj setValue:value forKey:key];
     }
@@ -399,7 +401,10 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
         return;
     }
     
-    AWSimpleKVOItem *item = self.observerDict[keyPath];
+    AWSimpleKVOItem *item = nil;
+    @synchronized(self){
+        item = self.observerDict[keyPath];
+    }
     if (item) {
         NSAssert(NO, @"重复监听");
         return;
@@ -416,7 +421,9 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
     item._superMethod = superMethod;
     item._localMethodTypeCoding = localMethodTypeCoding;
     
-    self.observerDict[keyPath] = item;
+    @synchronized(self){
+        self.observerDict[keyPath] = item;
+    }
     
     Class classNew = [self addNewClassObserverClass:self.obj.class keyPath:keyPath item:item];
     NSAssert(classNew != nil, @"replce method failed");
@@ -424,23 +431,24 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
     object_setClass(self.obj, classNew);
 }
 
--(NSString *)simpleKVOClassName{
-    if (!_simpleKVOClassName) {
-        _simpleKVOClassName = [AWSIMPLEKVOPREFIX stringByAppendingString:NSStringFromClass(self.obj.class)];
-    }
-    return _simpleKVOClassName;
-}
-
 -(Class) simpleKVOClass{
     if (!_simpleKVOClass) {
-        _simpleKVOClass = NSClassFromString(self.simpleKVOClassName);
+        @synchronized(self) {
+            if (!_simpleKVOClass) {
+                _simpleKVOClass = NSClassFromString(self.simpleKVOClassName);
+            }
+        }
     }
     return _simpleKVOClass;
 }
 
 -(Class) simpleKVOOriClass{
     if (!_simpleKVOOriClass) {
-        _simpleKVOOriClass = class_getSuperclass(self.simpleKVOClass);
+        @synchronized(self) {
+            if (!_simpleKVOOriClass) {
+                _simpleKVOOriClass = class_getSuperclass(self.simpleKVOClass);
+            }
+        }
     }
     return _simpleKVOOriClass;
 }
@@ -473,18 +481,25 @@ LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
 }
 
 -(void)awRemoveObserverForKeyPath:(NSString *)keyPath context:(void *)context{
-    self.observerDict[keyPath] = nil;
+    @synchronized(self){
+        self.observerDict[keyPath] = nil;
+    }
 }
 
 -(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
-    AWSimpleKVOItem *item = self.observerDict[keyPath];
+    AWSimpleKVOItem *item = nil;
+    @synchronized(self){
+        item = self.observerDict[keyPath];
+    }
     if(![item invokeBlockWithChange:change obj:self.obj]){
         [self awRemoveObserverForKeyPath:item.keyPath context:item.context];
     }
 }
 
 -(void) removeAllObservers {
-    [self.observerDict removeAllObjects];
+    @synchronized(self){
+        [self.observerDict removeAllObjects];
+    }
 }
 
 -(void)dealloc{
