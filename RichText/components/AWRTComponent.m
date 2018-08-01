@@ -6,6 +6,8 @@
 
 #import "AWRTComponent.h"
 
+#import "AWSimpleKVO.h"
+
 NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 
 #define AWRTCompFont @"AWRTCompFont"
@@ -80,15 +82,18 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 -(void)_addUpdateableObservers{
     NSSet *editableAttributes = self.editableAttributes;
     for (NSString *key in editableAttributes) {
-        [self addObserver:self forKeyPath:key options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil];
+        __weak typeof(self) weakSelf = self;
+        [self awAddObserverForKeyPath:key options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionOld context:nil block:^(NSObject *observer, NSString *keyPath, NSDictionary *change, void *context) {
+            [weakSelf observeValueForKeyPath:key ofObject:weakSelf change:change context:context];
+        }];
     }
 }
 
 -(void)_removeUpdateableObservers{
-    NSSet *editableAttributes = self.editableAttributes;
-    for (NSString *key in editableAttributes) {
-        [self removeObserver:self forKeyPath:key];
-    }
+//    NSSet *editableAttributes = self.editableAttributes;
+//    for (NSString *key in editableAttributes) {
+//        [self awRemoveObserverForKeyPath:key context:nil];
+//    }
 }
 
 -(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
