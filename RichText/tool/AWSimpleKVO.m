@@ -194,144 +194,54 @@ static void _localSetterObj(id obj, SEL sel, id v) {
     _localSetterNotify(item, obj, item.keyPath, v);
 }
 
-static void _localSetterNumber(id obj, SEL sel, long long v){
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    //忽略相同赋值
-    if([item.oldValue longLongValue] == v) {
-        return;
-    }
-    id number = nil;
-    switch (item.ivarType) {
-        case AWSimpleKVOSupporedIvarTypeChar:
-            ((void (*)(id, SEL, char))item._superMethod)(obj, sel, (char)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeInt:
-            ((void (*)(id, SEL, int))item._superMethod)(obj, sel, (int)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeShort:
-            ((void (*)(id, SEL, short))item._superMethod)(obj, sel, (short)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeLong:
-            ((void (*)(id, SEL, long))item._superMethod)(obj, sel, (long)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeLongLong:
-            ((void (*)(id, SEL, long long))item._superMethod)(obj, sel, (long long)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeUChar:
-            ((void (*)(id, SEL, unsigned char))item._superMethod)(obj, sel, (unsigned char)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeUInt:
-            ((void (*)(id, SEL, unsigned int))item._superMethod)(obj, sel, (unsigned int)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeUShort:
-            ((void (*)(id, SEL, unsigned short))item._superMethod)(obj, sel, (unsigned short)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeULong:
-            ((void (*)(id, SEL, unsigned long))item._superMethod)(obj, sel, (unsigned long)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeULongLong:
-            ((void (*)(id, SEL, unsigned long long))item._superMethod)(obj, sel, (unsigned long long)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeFloat:
-            ((void (*)(id, SEL, float))item._superMethod)(obj, sel, (float)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeDouble:
-            ((void (*)(id, SEL, double))item._superMethod)(obj, sel, (double)v);
-            break;
-        case AWSimpleKVOSupporedIvarTypeBool:
-            ((void (*)(id, SEL, bool))item._superMethod)(obj, sel, (bool)v);
-            break;
-        default:
-            return;
-    }
-    _localSetterNotify(item, obj, item.keyPath, number);
+#define LOCAL_SETTER_NUMBER(type, TypeSet, typeGet) \
+static void _localSetter##TypeSet(id obj, SEL sel, type v){ \
+    AWSimpleKVOItem *item = _localSetterReady(obj, sel); \
+    if([item.oldValue typeGet##Value] == v) {\
+        return;\
+    }\
+    ((void (*)(id, SEL, type))item._superMethod)(obj, sel, v); \
+    _localSetterNotify(item, obj, item.keyPath, [NSNumber numberWith##TypeSet:v]); \
 }
 
-static void _localSetterCGPoint(id obj, SEL sel, CGPoint v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    if(CGPointEqualToPoint([item.oldValue CGPointValue], v)){
-        return;
-    }
-    
-    ((void (*)(id, SEL, CGPoint))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithCGPoint: v]);
+LOCAL_SETTER_NUMBER(char, Char, char)
+LOCAL_SETTER_NUMBER(int, Int, int)
+LOCAL_SETTER_NUMBER(short, Short, short)
+LOCAL_SETTER_NUMBER(long, Long, long)
+LOCAL_SETTER_NUMBER(long long, LongLong, longLong)
+LOCAL_SETTER_NUMBER(unsigned char, UnsignedChar, unsignedChar)
+LOCAL_SETTER_NUMBER(unsigned int, UnsignedInt, unsignedInt)
+LOCAL_SETTER_NUMBER(unsigned short, UnsignedShort, unsignedShort)
+LOCAL_SETTER_NUMBER(unsigned long, UnsignedLong, unsignedLong)
+LOCAL_SETTER_NUMBER(unsigned long long, UnsignedLongLong, unsignedLongLong)
+LOCAL_SETTER_NUMBER(float, Float, float)
+LOCAL_SETTER_NUMBER(double, Double, double)
+LOCAL_SETTER_NUMBER(bool, Bool, bool)
+
+#define LOCAL_SETTER_STRUCTURE(type, equalMethod) \
+static void _localSetter##type(id obj, SEL sel, type v) { \
+    AWSimpleKVOItem *item = _localSetterReady(obj, sel); \
+    \
+    if(equalMethod([item.oldValue type##Value], v)){ \
+        return; \
+    } \
+    \
+    ((void (*)(id, SEL, type))item._superMethod)(obj, sel, v); \
+    \
+    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWith##type: v]); \
 }
 
-static void _localSetterCGSize(id obj, SEL sel, CGSize v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    if(CGSizeEqualToSize([item.oldValue CGSizeValue], v)){
-        return;
-    }
-    
-    ((void (*)(id, SEL, CGSize))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithCGSize: v]);
-}
+LOCAL_SETTER_STRUCTURE(CGPoint, CGPointEqualToPoint)
+LOCAL_SETTER_STRUCTURE(CGSize, CGSizeEqualToSize)
+LOCAL_SETTER_STRUCTURE(CGRect, CGRectEqualToRect)
 
-static void _localSetterCGRect(id obj, SEL sel, CGRect v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    if(CGRectEqualToRect([item.oldValue CGRectValue], v)){
-        return;
-    }
-    
-    ((void (*)(id, SEL, CGRect))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithCGRect: v]);
+static BOOL _CGVectorIsEqualToVector(CGVector vector, CGVector vector1) {
+    return vector.dx == vector1.dx && vector.dy == vector1.dy;
 }
-
-static void _localSetterCGVector(id obj, SEL sel, CGVector v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    CGVector oldV = [item.oldValue CGVectorValue];
-    
-    if(oldV.dx == v.dx && oldV.dy == v.dy){
-        return;
-    }
-    
-    ((void (*)(id, SEL, CGVector))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithCGVector: v]);
-}
-
-static void _localSetterCGAffineTransform(id obj, SEL sel, CGAffineTransform v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    if(CGAffineTransformEqualToTransform([item.oldValue affineTransform], v)){
-        return;
-    }
-    
-    ((void (*)(id, SEL, CGAffineTransform))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithCGAffineTransform: v]);
-}
-
-static void _localSetterUIEdgeInsets(id obj, SEL sel, UIEdgeInsets v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    if(UIEdgeInsetsEqualToEdgeInsets([item.oldValue UIEdgeInsetsValue], v)){
-        return;
-    }
-    
-    ((void (*)(id, SEL, UIEdgeInsets))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithUIEdgeInsets: v]);
-}
-
-static void _localSetterUIOffset(id obj, SEL sel, UIOffset v) {
-    AWSimpleKVOItem *item = _localSetterReady(obj, sel);
-    
-    if(UIOffsetEqualToOffset([item.oldValue UIOffsetValue], v)){
-        return;
-    }
-    
-    ((void (*)(id, SEL, UIOffset))item._superMethod)(obj, sel, v);
-    
-    _localSetterNotify(item, obj, item.keyPath, [NSValue valueWithUIOffset: v]);
-}
+LOCAL_SETTER_STRUCTURE(CGVector, _CGVectorIsEqualToVector)
+LOCAL_SETTER_STRUCTURE(CGAffineTransform, CGAffineTransformEqualToTransform)
+LOCAL_SETTER_STRUCTURE(UIEdgeInsets, UIEdgeInsetsEqualToEdgeInsets)
+LOCAL_SETTER_STRUCTURE(UIOffset, UIOffsetEqualToOffset)
 
 @implementation AWSimpleKVO
 
@@ -378,68 +288,68 @@ static void _localSetterUIOffset(id obj, SEL sel, UIOffset v) {
     switch (*ivTypeCode) {
         case 'c':
             ivarType = AWSimpleKVOSupporedIvarTypeChar;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterChar;
+            localMethodTypeCoding = @"v@:c";
             break;
         case 'i':
             ivarType = AWSimpleKVOSupporedIvarTypeInt;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterInt;
+            localMethodTypeCoding = @"v@:i";
             break;
         case 's':
             ivarType = AWSimpleKVOSupporedIvarTypeShort;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterShort;
+            localMethodTypeCoding = @"v@:s";
             break;
         case 'l':
             ivarType = AWSimpleKVOSupporedIvarTypeLong;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterLong;
+            localMethodTypeCoding = @"v@:l";
             break;
         case 'q':
             ivarType = AWSimpleKVOSupporedIvarTypeLongLong;
-            localMethod = (IMP)_localSetterNumber;
+            localMethod = (IMP)_localSetterLongLong;
             localMethodTypeCoding = @"v@:q";
             break;
         case 'C':
             ivarType = AWSimpleKVOSupporedIvarTypeUChar;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterUnsignedChar;
+            localMethodTypeCoding = @"v@:C";
             break;
         case 'I':
             ivarType = AWSimpleKVOSupporedIvarTypeUInt;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterUnsignedInt;
+            localMethodTypeCoding = @"v@:I";
             break;
         case 'S':
             ivarType = AWSimpleKVOSupporedIvarTypeUShort;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterUnsignedShort;
+            localMethodTypeCoding = @"v@:S";
             break;
         case 'L':
             ivarType = AWSimpleKVOSupporedIvarTypeULong;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterUnsignedLong;
+            localMethodTypeCoding = @"v@:L";
             break;
         case 'Q':
             ivarType = AWSimpleKVOSupporedIvarTypeULongLong;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterUnsignedLongLong;
+            localMethodTypeCoding = @"v@:Q";
             break;
         case 'f':
             ivarType = AWSimpleKVOSupporedIvarTypeFloat;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterFloat;
+            localMethodTypeCoding = @"v@:f";
             break;
         case 'd':
             ivarType = AWSimpleKVOSupporedIvarTypeDouble;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterDouble;
+            localMethodTypeCoding = @"v@:d";
             break;
         case 'B':
             ivarType = AWSimpleKVOSupporedIvarTypeBool;
-            localMethod = (IMP)_localSetterNumber;
-            localMethodTypeCoding = @"v@:q";
+            localMethod = (IMP)_localSetterBool;
+            localMethodTypeCoding = @"v@:B";
             break;
         case '@':
             ivarType = AWSimpleKVOSupporedIvarTypeObject;

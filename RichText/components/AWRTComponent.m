@@ -90,10 +90,10 @@ NSString *AWRTComponentDefaultMode = @"aw_rt_default_mode";
 }
 
 -(void)_removeUpdateableObservers{
-//    NSSet *editableAttributes = self.editableAttributes;
-//    for (NSString *key in editableAttributes) {
-//        [self awRemoveObserverForKeyPath:key context:nil];
-//    }
+    NSSet *editableAttributes = self.editableAttributes;
+    for (NSString *key in editableAttributes) {
+        [self awRemoveObserverForKeyPath:key context:nil];
+    }
 }
 
 -(void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context{
